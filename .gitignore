@@ -6,3 +6,5 @@ riderModule.iml
 .vs
 /Benchmarks/**/*.log
 /Benchmarks/**/*.csv
+.idea/
+Validly.sln.DotSettings.user

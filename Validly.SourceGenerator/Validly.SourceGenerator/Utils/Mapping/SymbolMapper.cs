@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 
 namespace Validly.SourceGenerator.Utils.Mapping;
@@ -104,6 +105,7 @@ internal static class SymbolMapper
 				string s => $"\"{s}\"",
 				char c => $"'{c}'",
 				bool b => b.ToString().ToLowerInvariant(),
+				double d => d.ToString(new NumberFormatInfo { NumberDecimalSeparator = "." }),
 				_ => constant.Value?.ToString() ?? "null",
 			},
 			_ => constant.Value?.ToString() ?? "null",

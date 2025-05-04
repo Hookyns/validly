@@ -16,7 +16,7 @@ public partial class CreateUserRequest
 	[EmailAddress]
 	public required string Email { get; init; }
 
-	[Between(18, 120)]
+	[Between(18, 120.1)]
 	public required int Age { get; init; }
 
 	[NotEmpty]

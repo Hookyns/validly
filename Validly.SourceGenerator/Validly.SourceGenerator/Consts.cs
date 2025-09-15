@@ -28,6 +28,8 @@ internal static class Consts
 	public const string ServiceProviderGlobalRef = $"global::System.{nameof(IServiceProvider)}";
 	public const string ValidationMessageGlobalRef = $"global::Validly.{nameof(ValidationMessage)}";
 
+	public const string CancellationTokenName = $"{nameof(CancellationToken)}";
+
 	public const string ValidationResultName = "ValidationResult";
 	public const string ExtendableValidationResultName = "ExtendableValidationResult";
 	public const string CustomValidationMethodPrefix = "Validate";

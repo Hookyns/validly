@@ -214,7 +214,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			.Append($"{asyncKeyword}ValueTask<{Consts.ValidationResultGlobalRef}>")
 			.AppendLine($" {Consts.InternalValidationInvokerGlobalRef}.ValidateAsync(")
 			.AppendLine($"\t{Consts.ValidationContextGlobalRef} context,")
-			.AppendLine($"\t{Consts.ServiceProviderGlobalRef}? serviceProvider")
+			.AppendLine($"\t{Consts.ServiceProviderGlobalRef}? serviceProvider,")
+			.AppendLine($"\t{Consts.CancellationTokenName} ct")
 			.AppendLine(")")
 			.AppendLine("{");
 
@@ -238,7 +239,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			nestedValidations.Add(
 				$"""
 				context.SetObject(this.{property.PropertyName});
-				var nestedValidationResult{nestedValidationsDispose.Count} = await (({Consts.InternalValidationInvokerGlobalRef})this.{property.PropertyName}).ValidateAsync(context, serviceProvider);
+				var nestedValidationResult{nestedValidationsDispose.Count} = await (({Consts.InternalValidationInvokerGlobalRef})this.{property.PropertyName}).ValidateAsync(context, serviceProvider, ct);
 				nestedPropertiesCount += (({Consts.InternalValidationResultGlobalRef})nestedValidationResult{nestedValidationsDispose.Count}).GetPropertiesCount();
 				"""
 			);
@@ -274,7 +275,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				validateMethodFilePart.AppendLine(
 					$"""
 					// call BASE class' Validate()
-					var baseResult = await (({Consts.InternalValidationInvokerGlobalRef})base).ValidateAsync(validationContext, serviceProvider);
+					var baseResult = await (({Consts.InternalValidationInvokerGlobalRef})base).ValidateAsync(validationContext, serviceProvider, ct);
 					nestedPropertiesCount += (({Consts.InternalValidationResultGlobalRef})baseResult).GetPropertiesCount();
 					""".Indent()
 				);
@@ -306,21 +307,18 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			);
 		}
 
+		validateMethodFilePart
+			.AppendLine("\tvar serviceValidationContext = context;")
+			.AppendLine($"\tvar serviceValidationResult = ({Consts.ValidationResultGlobalRef})result;");
 		if (dependencies.HasDependencies)
 		{
-			validateMethodFilePart
-				.AppendLine("\t// Required services")
-				.AppendLine("\tvar serviceValidationContext = context;")
-				.AppendLine($"\tvar serviceValidationResult = ({Consts.ValidationResultGlobalRef})result;")
-				.AppendLine(
-					string.Join(
-						Environment.NewLine,
-						dependencies.Services.Select(dependency =>
-							$"\tvar service{dependency} = ServiceProviderHelper.GetRequiredService<{dependency}>(serviceProvider);"
-						)
-					)
-				)
-				.AppendLine();
+			validateMethodFilePart.AppendLine("\t// Required services");
+			// for indentation purposes
+			foreach (var dependency in dependencies.Services)
+			{
+				validateMethodFilePart.AppendLine(
+					$"\tvar service{dependency} = ServiceProviderHelper.GetRequiredService<{dependency}>(serviceProvider);");
+			}
 		}
 
 		// BeforeValidate hook
@@ -354,7 +352,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			.AppendLine("{")
 			.AppendLine($"\tusing var validationContext = {Consts.ValidationContextGlobalRef}.Create(this);")
 			.AppendLine(
-				$"\treturn await (({Consts.InternalValidationInvokerGlobalRef})this).ValidateAsync(validationContext, serviceProvider);"
+				$"\treturn await (({Consts.InternalValidationInvokerGlobalRef})this).ValidateAsync(validationContext, serviceProvider, ct: default);"
 			)
 			.AppendLine("}");
 
@@ -365,8 +363,12 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			? $"ValueTask<{Consts.ValidationResultGlobalRef}>"
 			: Consts.ValidationResultGlobalRef;
 		var overrideVirtual = properties.Object.InheritsValidatableObject ? "override" : "virtual";
-		var serviceProviderParameter =
-			dependencies.Services.Count > 0 ? $"{Consts.ServiceProviderGlobalRef} serviceProvider" : string.Empty;
+		var serviceProviderParameter = dependencies.HasDependencies
+			? $"{Consts.ServiceProviderGlobalRef} serviceProvider"
+			: string.Empty;
+		var cancellationTokenParameter = dependencies.HasDependencies
+			? ", CancellationToken ct = default"
+			: "CancellationToken ct = default";
 
 		validateMethodFilePart.AppendLine(
 			$$"""
@@ -375,10 +377,10 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			/// Validate the object and get the result with error messages.
 			/// </summary>
 			/// <returns>Returns disposable ValidationResult.</returns>
-			public {{overrideVirtual}} async ValueTask<{{Consts.ValidationResultGlobalRef}}> ValidateAsync({{serviceProviderParameter}})
+			public {{overrideVirtual}} async ValueTask<{{Consts.ValidationResultGlobalRef}}> ValidateAsync({{serviceProviderParameter}}{{cancellationTokenParameter}})
 			{
 				using var validationContext = {{Consts.ValidationContextGlobalRef}}.Create(this);
-				return await (({{Consts.InternalValidationInvokerGlobalRef}})this).ValidateAsync(validationContext, {{serviceProviderDep}});
+				return await (({{Consts.InternalValidationInvokerGlobalRef}})this).ValidateAsync(validationContext, {{serviceProviderDep}}, ct);
 			}
 
 			""".Indent()
@@ -396,7 +398,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				public {{overrideVirtual}} {{validateReturnType}} Validate({{serviceProviderParameter}})
 				{
 					using var validationContext = {{Consts.ValidationContextGlobalRef}}.Create(this);
-					var task = (({{Consts.InternalValidationInvokerGlobalRef}})this).ValidateAsync(validationContext, {{serviceProviderDep}});
+					var task = (({{Consts.InternalValidationInvokerGlobalRef}})this).ValidateAsync(validationContext, {{serviceProviderDep}}, default);
 
 					if (!task.IsCompletedSuccessfully)
 					{

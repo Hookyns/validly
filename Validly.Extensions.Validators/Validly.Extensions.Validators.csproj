@@ -35,8 +35,4 @@
 		<None Include="assets/LICENSE" Pack="true" PackagePath=""/>
 	</ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="Comparables\"/>
-	</ItemGroup>
-
 </Project>

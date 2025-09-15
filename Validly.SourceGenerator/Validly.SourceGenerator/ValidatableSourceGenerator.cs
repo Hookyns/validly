@@ -316,7 +316,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 					string.Join(
 						Environment.NewLine,
 						dependencies.Services.Select(dependency =>
-							$"\tvar service{dependency} = serviceProvider!.GetRequiredService<{dependency}>();"
+							$"\tvar service{dependency} = ServiceProviderHelper.GetRequiredService<{dependency}>(serviceProvider);"
 						)
 					)
 				)

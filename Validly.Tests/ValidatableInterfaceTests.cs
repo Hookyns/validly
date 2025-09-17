@@ -21,7 +21,9 @@ public class ValidatableInterfaceTests
 		};
 
 		IValidatable validatable = root;
-		var result = await validatable.ValidateAsync(new ServiceCollection().BuildServiceProvider());
+		var result = await validatable.ValidateAsync(
+			new ServiceCollection().BuildServiceProvider(),
+			CancellationToken.None);
 
 		Assert.True(result.IsSuccess);
 	}
@@ -35,7 +37,9 @@ public class ValidatableInterfaceTests
 		};
 
 		IValidatable validatable = root;
-		var result = await validatable.ValidateAsync(new ServiceCollection().BuildServiceProvider());
+		var result = await validatable.ValidateAsync(
+			new ServiceCollection().BuildServiceProvider(),
+			CancellationToken.None);
 
 		Assert.False(result.IsSuccess);
 	}

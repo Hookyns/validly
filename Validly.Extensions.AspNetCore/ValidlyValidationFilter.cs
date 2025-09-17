@@ -21,6 +21,7 @@ public class ValidlyValidationFilter : IEndpointFilter
 		EndpointFilterDelegate next
 	)
 	{
+		var ct = invocationContext.HttpContext.RequestAborted;
 		for (int argumentIndex = 0; argumentIndex < invocationContext.Arguments.Count; argumentIndex++)
 		{
 			object? argument = invocationContext.Arguments[argumentIndex];
@@ -29,7 +30,7 @@ public class ValidlyValidationFilter : IEndpointFilter
 			{
 				// Do not use "using"; we don't want to dispose it here.
 				// The ValidationHttpResult will dispose in case there are errors.
-				var resultTask = validatable.ValidateAsync(_serviceProvider);
+				var resultTask = validatable.ValidateAsync(_serviceProvider, ct);
 
 				ValidationResult validationResult;
 

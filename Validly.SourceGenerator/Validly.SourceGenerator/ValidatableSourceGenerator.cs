@@ -347,12 +347,12 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			.AppendLine()
 			.AppendLine("/// <inheritdoc />")
 			.Append(
-				$"async ValueTask<{Consts.ValidationResultGlobalRef}> {Consts.IValidatableGlobalRef}.ValidateAsync(IServiceProvider serviceProvider)"
+				$"async ValueTask<{Consts.ValidationResultGlobalRef}> {Consts.IValidatableGlobalRef}.ValidateAsync(IServiceProvider serviceProvider, CancellationToken ct)"
 			)
 			.AppendLine("{")
 			.AppendLine($"\tusing var validationContext = {Consts.ValidationContextGlobalRef}.Create(this);")
 			.AppendLine(
-				$"\treturn await (({Consts.InternalValidationInvokerGlobalRef})this).ValidateAsync(validationContext, serviceProvider, ct: default);"
+				$"\treturn await (({Consts.InternalValidationInvokerGlobalRef})this).ValidateAsync(validationContext, serviceProvider, ct);"
 			)
 			.AppendLine("}");
 

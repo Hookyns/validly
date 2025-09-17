@@ -9,6 +9,7 @@ public interface IValidatable
 	/// Validate the object
 	/// </summary>
 	/// <param name="serviceProvider"></param>
+	/// <param name="ct"></param>
 	/// <returns></returns>
-	ValueTask<ValidationResult> ValidateAsync(IServiceProvider serviceProvider);
+	ValueTask<ValidationResult> ValidateAsync(IServiceProvider serviceProvider, CancellationToken ct);
 }

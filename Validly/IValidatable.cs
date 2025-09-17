@@ -11,5 +11,5 @@ public interface IValidatable
 	/// <param name="serviceProvider"></param>
 	/// <param name="ct"></param>
 	/// <returns></returns>
-	ValueTask<ValidationResult> ValidateAsync(IServiceProvider serviceProvider, CancellationToken ct);
+	ValueTask<ValidationResult> ValidateAsync(IServiceProvider serviceProvider, CancellationToken ct = default);
 }

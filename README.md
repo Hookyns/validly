@@ -1,7 +1,8 @@
 # Validly
 
 [![NuGet](https://img.shields.io/nuget/v/Validly)](https://www.nuget.org/packages/Validly)
-[![License MIT](https://img.shields.io/badge/License-MIT-brightgreen?style=flat-square)](https://opensource.org/licenses/MIT)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![License MIT](https://img.shields.io/badge/License-MIT-brightgreen?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Support Ukraine](https://img.shields.io/badge/Support-Ukraine-FFDD00?labelColor=0057B7)](https://donate.redcross.org.uk/appeal/ukraine-crisis-appeal)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 

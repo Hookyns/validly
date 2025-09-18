@@ -5,31 +5,42 @@ namespace Validly.Tests.Validators.Strings;
 [Validatable]
 partial record PasswordNoRequirementsTestObject
 {
-	[Password(8, requireSpecialChar: false, requireUpperCase: false, requireDigit: false)]
+	[Password(8)]
 	public required string Password { get; init; }
 }
 
 [Validatable]
 partial record PasswordRequireSpecialCharTestObject
 {
-	[Password(8, requireSpecialChar: true, requireUpperCase: false, requireDigit: false)]
+	[Password(
+		minLength: 8,
+		numberOfRequiredSpecialCharacters: 1,
+		numberOfRequiredUpperCaseCharacters: 0,
+		numberOfRequiredDigitCharacters: 0)]
 	public required string Password { get; init; }
 }
 
 [Validatable]
 partial record PasswordRequireSpecialAndUpperTestObject
 {
-	[Password(8, requireSpecialChar: true, requireUpperCase: true, requireDigit: false)]
+	[Password(
+		minLength: 8,
+		numberOfRequiredSpecialCharacters: 1,
+		numberOfRequiredUpperCaseCharacters: 1,
+		numberOfRequiredDigitCharacters: 0)]
 	public required string Password { get; init; }
 }
 
 [Validatable]
 partial record PasswordRequireAllTestObject
 {
-	[Password(8, requireSpecialChar: true, requireUpperCase: true, requireDigit: true)]
+	[Password(
+		minLength: 8,
+		numberOfRequiredSpecialCharacters: 1,
+		numberOfRequiredUpperCaseCharacters: 1,
+		numberOfRequiredDigitCharacters: 1)]
 	public required string Password { get; init; }
 }
-
 
 public class PasswordTests
 {
@@ -41,8 +52,6 @@ public class PasswordTests
 	[InlineData("Mixed!Pass")]
 	public void ValidNoRequirementsPasswordTest(string password)
 	{
-		if (password.Length < 8) return;
-
 		var value = new PasswordNoRequirementsTestObject { Password = password };
 
 		using var result = value.Validate();
@@ -57,9 +66,7 @@ public class PasswordTests
 	[InlineData(null)]
 	public void InvalidNoRequirementsPasswordTest(string? password)
 	{
-		var value = password is null
-			? new PasswordNoRequirementsTestObject { Password = null! }
-			: new PasswordNoRequirementsTestObject { Password = password };
+		var value = new PasswordNoRequirementsTestObject { Password = password! };
 
 		using var result = value.Validate();
 
@@ -90,9 +97,7 @@ public class PasswordTests
 	[InlineData(null)]
 	public void InvalidRequireSpecialCharPasswordTest(string? password)
 	{
-		var value = password is null
-			? new PasswordRequireSpecialCharTestObject { Password = null! }
-			: new PasswordRequireSpecialCharTestObject { Password = password };
+		var value = new PasswordRequireSpecialCharTestObject { Password = password! };
 
 		using var result = value.Validate();
 
@@ -124,9 +129,7 @@ public class PasswordTests
 	[InlineData("lowercase!")]
 	public void InvalidRequireSpecialAndUpperPasswordTest(string? password)
 	{
-		var value = password is null
-			? new PasswordRequireSpecialAndUpperTestObject { Password = null! }
-			: new PasswordRequireSpecialAndUpperTestObject { Password = password };
+		var value = new PasswordRequireSpecialAndUpperTestObject { Password = password! };
 
 		using var result = value.Validate();
 
@@ -163,9 +166,7 @@ public class PasswordTests
 	[InlineData("Missing!")]
 	public void InvalidRequireAllPasswordTest(string? password)
 	{
-		var value = password is null
-			? new PasswordRequireAllTestObject { Password = null! }
-			: new PasswordRequireAllTestObject { Password = password };
+		var value = new PasswordRequireAllTestObject { Password = password! };
 
 		using var result = value.Validate();
 

@@ -10,6 +10,7 @@ public interface IInternalValidationInvoker
 	/// </summary>
 	/// <param name="validationContext"></param>
 	/// <param name="serviceProvider"></param>
+	/// <param name="ct"></param>
 	/// <returns></returns>
-	ValueTask<ValidationResult> ValidateAsync(ValidationContext validationContext, IServiceProvider? serviceProvider);
+	ValueTask<ValidationResult> ValidateAsync(ValidationContext validationContext, IServiceProvider? serviceProvider, CancellationToken ct);
 }

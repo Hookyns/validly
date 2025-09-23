@@ -16,9 +16,6 @@ public partial record ValidationMessage(
 	params object?[] Args
 )
 {
-	private static readonly JsonSerializerOptions ArgumentSerializerOptions =
-		new() { TypeInfoResolverChain = { ArgumentJsonContext.Default } };
-
 	/// <summary>
 	/// Empty validation message
 	/// </summary>
@@ -31,7 +28,9 @@ public partial record ValidationMessage(
 	/// Prepared to be used within array brackets like: $"[{ArgsJson}]"
 	/// </remarks>
 	public string ArgsJson { get; } =
-		string.Join(", ", Args.Select(static x => JsonSerializer.Serialize(x, ArgumentSerializerOptions)));
+		string.Join(", ", Args.Select(static x => x is null
+			? "null"
+			: JsonSerializer.Serialize(x, ArgumentJsonContext.Default.Object)));
 
 	[JsonSerializable(typeof(object))]
 	[JsonSerializable(typeof(string))]

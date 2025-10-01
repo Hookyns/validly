@@ -14,6 +14,11 @@ namespace Validly.Extensions.Validators.Strings;
 [AttributeUsage(AttributeTargets.Property)]
 public class PasswordAttribute : Attribute
 {
+	private readonly ValidationMessage _lengthValidationMessage;
+	private readonly ValidationMessage _specialCharactersValidationMessage;
+	private readonly ValidationMessage _upperCaseValidationMessage;
+	private readonly ValidationMessage _digitsValidationMessage;
+
 	private readonly int _minLength;
 	private readonly int _numberOfRequiredSpecialCharacters;
 	private readonly int _numberOfRequiredUpperCaseCharacters;
@@ -77,6 +82,28 @@ public class PasswordAttribute : Attribute
 		_numberOfRequiredSpecialCharacters = numberOfRequiredSpecialCharacters;
 		_numberOfRequiredUpperCaseCharacters = numberOfRequiredUpperCaseCharacters;
 		_numberOfRequiredDigitCharacters = numberOfRequiredDigitCharacters;
+
+		_lengthValidationMessage = new(
+			"Password must be at least {0} characters long.",
+			$"{ValidationMessagesHelper.GenerateResourceKey(nameof(PasswordAttribute))}.Length",
+			minLength);
+
+		_specialCharactersValidationMessage = new(
+			"The password must contain at least {0} special character letter(s).",
+			$"{ValidationMessagesHelper.GenerateResourceKey(nameof(PasswordAttribute))}.SpecialChar",
+			_numberOfRequiredSpecialCharacters);
+
+		_upperCaseValidationMessage = new(
+			"The password must contain at least {0} uppercase letter(s).",
+			$"{ValidationMessagesHelper.GenerateResourceKey(nameof(PasswordAttribute))}.UpperCase",
+			_numberOfRequiredUpperCaseCharacters
+		);
+
+		_digitsValidationMessage = new(
+			"The password must contain at least {0} digit letter(s).",
+			$"{ValidationMessagesHelper.GenerateResourceKey(nameof(PasswordAttribute))}.Digit",
+			_numberOfRequiredUpperCaseCharacters
+		);
 	}
 
 	/// <summary>
@@ -96,12 +123,12 @@ public class PasswordAttribute : Attribute
 	{
 		if (value is null || value.Length < _minLength)
 		{
-			return CreateValidationMessage($"Password must be at least {_minLength} characters long.");
+			return _lengthValidationMessage;
 		}
 
-		int specialCharCount = 0;
-		int upperCaseCount = 0;
-		int digitCount = 0;
+		var specialCharCount = 0;
+		var upperCaseCount = 0;
+		var digitCount = 0;
 
 		foreach (char c in value)
 		{
@@ -130,24 +157,19 @@ public class PasswordAttribute : Attribute
 
 		if (specialCharCount < _numberOfRequiredSpecialCharacters)
 		{
-			return CreateValidationMessage($"The password must contain at least {_numberOfRequiredSpecialCharacters} special character(s).");
+			return _specialCharactersValidationMessage;
 		}
 
 		if (upperCaseCount < _numberOfRequiredUpperCaseCharacters)
 		{
-			return CreateValidationMessage($"The password must contain at least {_numberOfRequiredUpperCaseCharacters} uppercase letter(s).");
+			return _upperCaseValidationMessage;
 		}
 
 		if (digitCount < _numberOfRequiredDigitCharacters)
 		{
-			return CreateValidationMessage($"The password must contain at least {_numberOfRequiredDigitCharacters} digit(s).");
+			return _digitsValidationMessage;
 		}
 
 		return null;
-	}
-
-	private static ValidationMessage CreateValidationMessage(string message)
-	{
-		return ValidationMessagesHelper.CreateMessage(nameof(PasswordAttribute), message);
 	}
 }

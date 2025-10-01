@@ -19,9 +19,13 @@ if (args.Any(arg => arg == "inprocess"))
 		.WithOptions(ConfigOptions.DisableOptimizationsValidator)
 		.AddJob(job);
 
-	BenchmarkRunner.Run<SimpleValidationLibrariesComparisonBenchmark>(config);
+	BenchmarkRunner.Run<PasswordBenchmark>(config);
+
+	Console.Read();
 }
 else
 {
-	BenchmarkRunner.Run<SimpleValidationLibrariesComparisonBenchmark>();
+	BenchmarkRunner.Run<PasswordBenchmark>();
+
+	Console.Read();
 }

@@ -28,9 +28,12 @@ public partial record ValidationMessage(
 	/// Prepared to be used within array brackets like: $"[{ArgsJson}]"
 	/// </remarks>
 	public string ArgsJson { get; } =
-		string.Join(", ", Args.Select(static x => x is null
-			? "null"
-			: JsonSerializer.Serialize(x, ArgumentJsonContext.Default.Object)));
+		string.Join(
+			", ",
+			Args.Select(static x =>
+				x is null ? "null" : JsonSerializer.Serialize(x, ArgumentJsonContext.Default.Object)
+			)
+		);
 
 	[JsonSerializable(typeof(object))]
 	[JsonSerializable(typeof(string))]

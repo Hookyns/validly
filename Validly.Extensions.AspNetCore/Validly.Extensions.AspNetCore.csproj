@@ -1,42 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
 		<TargetFrameworks>net7.0;net8.0</TargetFrameworks>
 		<PackageId>Validly.Extensions.AspNetCore</PackageId>
-		<Version>1.1.2</Version>
+		<Version>1.2.0</Version>
 		<Description>Validly extensions for ASP.NET Core</Description>
 		<PackageTags>validly valid validator validation annotations attributes source-generator</PackageTags>
 		<IsPackable>true</IsPackable>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
-
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
-
 	<ItemGroup>
-		<ProjectReference Include="..\Validly\Validly.csproj" PackageVersion="[~,2.0.0)"/>
+		<ProjectReference Include="..\Validly\Validly.csproj" PackageVersion="[~,2.0.0)" />
 	</ItemGroup>
-
 	<ItemGroup>
-		<None Include="assets/README.md" Pack="true" PackagePath=""/>
-		<None Include="assets/LICENSE" Pack="true" PackagePath=""/>
+		<None Include="assets/README.md" Pack="true" PackagePath="" />
+		<None Include="assets/LICENSE" Pack="true" PackagePath="" />
 	</ItemGroup>
-
-<!--	<ItemGroup Condition="$(TargetFramerork) == 'net9.0'">-->
-<!--		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0"/>-->
-<!--	</ItemGroup>-->
-
-<!--	<ItemGroup Condition="$(TargetFramerork) == 'net8.0'">-->
-<!--		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2"/>-->
-<!--	</ItemGroup>-->
-
-<!--	<ItemGroup Condition="$(TargetFramerork) == 'net7.0'">-->
-<!--		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0"/>-->
-<!--	</ItemGroup>-->
-
-<!--	<ItemGroup Condition="$(TargetFramerork) == 'net6.0'">-->
-<!--		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0"/>-->
-<!--	</ItemGroup>-->
-
+	<!--	<ItemGroup Condition="$(TargetFramerork) == 'net9.0'">-->
+	<!--		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0"/>-->
+	<!--	</ItemGroup>-->
+	<!--	<ItemGroup Condition="$(TargetFramerork) == 'net8.0'">-->
+	<!--		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2"/>-->
+	<!--	</ItemGroup>-->
+	<!--	<ItemGroup Condition="$(TargetFramerork) == 'net7.0'">-->
+	<!--		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0"/>-->
+	<!--	</ItemGroup>-->
+	<!--	<ItemGroup Condition="$(TargetFramerork) == 'net6.0'">-->
+	<!--		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0"/>-->
+	<!--	</ItemGroup>-->
 </Project>

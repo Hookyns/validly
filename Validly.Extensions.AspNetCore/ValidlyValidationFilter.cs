@@ -22,6 +22,7 @@ public class ValidlyValidationFilter : IEndpointFilter
 	)
 	{
 		var ct = invocationContext.HttpContext.RequestAborted;
+
 		for (int argumentIndex = 0; argumentIndex < invocationContext.Arguments.Count; argumentIndex++)
 		{
 			object? argument = invocationContext.Arguments[argumentIndex];

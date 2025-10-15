@@ -13,25 +13,27 @@ public class ServiceProviderHelperTests
 	{
 		var dependency = Substitute.For<IDependency>();
 		dependency.GetNumber(Arg.Any<string>()).Returns(property is "Property" ? 1 : 2);
+
 		var validatable = new ValidatableObject("Property");
 		var result = validatable.Validate(new ServiceCollection().AddSingleton(dependency).BuildServiceProvider());
+
 		Assert.Equal(result.IsSuccess, property is "Property");
 	}
 }
 
 [Validatable]
-internal partial record ValidatableObject(
-	[property: CustomValidation] string Property)
+internal partial record ValidatableObject([property: CustomValidation] string Property)
 {
-	public IEnumerable<ValidationMessage> ValidateProperty(
-		IDependency dependency)
+	public IEnumerable<ValidationMessage> ValidateProperty(IDependency dependency)
 	{
 		var number = dependency.GetNumber(Property);
+
 		if (number % 2 != 0)
+		{
 			yield break;
-		yield return new ValidationMessage(
-			$"Number {number} based on property {Property} is even",
-			"Property.Even");
+		}
+
+		yield return new ValidationMessage($"Number {number} based on property {Property} is even", "Property.Even");
 	}
 }
 

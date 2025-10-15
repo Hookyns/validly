@@ -307,17 +307,22 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			);
 		}
 
+		// Prepared for case when users require "ValidationContext" or "ValidationResult" in their custom methods; unused otherwise
 		validateMethodFilePart
+			.AppendLine("\tvar serviceCancellationToken = ct;")
 			.AppendLine("\tvar serviceValidationContext = context;")
 			.AppendLine($"\tvar serviceValidationResult = ({Consts.ValidationResultGlobalRef})result;");
+
 		if (dependencies.HasDependencies)
 		{
 			validateMethodFilePart.AppendLine("\t// Required services");
+
 			// for indentation purposes
 			foreach (var dependency in dependencies.Services)
 			{
 				validateMethodFilePart.AppendLine(
-					$"\tvar service{dependency} = ServiceProviderHelper.GetRequiredService<{dependency}>(serviceProvider);");
+					$"\tvar service{dependency} = ServiceProviderHelper.GetRequiredService<{dependency}>(serviceProvider);"
+				);
 			}
 		}
 

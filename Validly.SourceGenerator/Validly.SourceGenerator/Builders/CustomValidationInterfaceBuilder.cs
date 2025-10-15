@@ -70,10 +70,12 @@ internal class CustomValidationInterfaceBuilder
 			);
 
 			// Add CALL
-			var arguments = string.Join(", ", existingMethod.Dependencies.Select(
-				service => service is Consts.CancellationTokenName
-					? "ct"
-					: $"service{service}"));
+			var arguments = string.Join(
+				", ",
+				existingMethod.Dependencies.Select(service =>
+					service is Consts.CancellationTokenName ? "ct" : $"service{service}"
+				)
+			);
 			var call = $"customValidator.Validate{properties.PropertyName}({arguments})";
 
 			Calls.AddValidatorCall(call, existingMethod.ReturnTypeType);

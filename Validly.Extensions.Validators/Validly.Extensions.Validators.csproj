@@ -1,38 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<PackageId>Validly.Extensions.Validators</PackageId>
-		<Version>1.1.3</Version>
+		<Version>1.1.4</Version>
 		<Description>Basic validation rules for Validly</Description>
 		<PackageTags>validly valid validator validation annotations attributes source-generator</PackageTags>
 		<IsPackable>true</IsPackable>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">true</IsAotCompatible>
+		<IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))"
+			>true</IsAotCompatible
+		>
 	</PropertyGroup>
-
 	<ItemGroup>
-		<ProjectReference Include="..\Validly\Validly.csproj" PackageVersion="[~,2.0.0)"/>
+		<ProjectReference Include="..\Validly\Validly.csproj" PackageVersion="[~,2.0.0)" />
 	</ItemGroup>
-
-<!--	<ItemGroup Condition="$(Configuration) == 'Debug'">-->
-<!--		<ProjectReference Include="..\Validly\Validly.csproj"/>-->
-<!--	</ItemGroup>-->
-
-<!--	<ItemGroup Condition="$(Configuration) != 'Debug'">-->
-<!--		<PackageReference Include="Validly" Version="1.1.1" />-->
-<!--	</ItemGroup>-->
-
+	<!--	<ItemGroup Condition="$(Configuration) == 'Debug'">-->
+	<!--		<ProjectReference Include="..\Validly\Validly.csproj"/>-->
+	<!--	</ItemGroup>-->
+	<!--	<ItemGroup Condition="$(Configuration) != 'Debug'">-->
+	<!--		<PackageReference Include="Validly" Version="1.1.1" />-->
+	<!--	</ItemGroup>-->
 	<ItemGroup>
 		<PackageReference Include="PolySharp" Version="1.15.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 	</ItemGroup>
-
 	<ItemGroup>
-		<None Include="assets/README.md" Pack="true" PackagePath=""/>
-		<None Include="assets/LICENSE" Pack="true" PackagePath=""/>
+		<None Include="assets/README.md" Pack="true" PackagePath="" />
+		<None Include="assets/LICENSE" Pack="true" PackagePath="" />
 	</ItemGroup>
-
 </Project>

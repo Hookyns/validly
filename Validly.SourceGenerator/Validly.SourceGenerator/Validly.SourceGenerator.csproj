@@ -1,59 +1,49 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <IsPackable>true</IsPackable>
-        <Nullable>enable</Nullable>
-        <LangVersion>latest</LangVersion>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<IsPackable>true</IsPackable>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
 		<LangVersion>11</LangVersion>
-
-        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-        <IsRoslynComponent>true</IsRoslynComponent>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<IsRoslynComponent>true</IsRoslynComponent>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
-
-        <PackageId>Validly.SourceGenerator</PackageId>
-		<Version>1.1.5</Version>
+		<PackageId>Validly.SourceGenerator</PackageId>
+		<Version>1.2.0</Version>
 		<Description>Source Generator for Validly validation library</Description>
 		<PackageTags>validly valid validator validation annotations attributes source-generator</PackageTags>
 		<IsPackable>true</IsPackable>
-    </PropertyGroup>
-
+	</PropertyGroup>
 	<ItemGroup>
-		<None Include="assets/README.md" Pack="true" PackagePath=""/>
-		<None Include="assets/LICENSE" Pack="true" PackagePath=""/>
+		<None Include="assets/README.md" Pack="true" PackagePath="" />
+		<None Include="assets/LICENSE" Pack="true" PackagePath="" />
 	</ItemGroup>
-
 	<ItemGroup>
 		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 		<None Update="Validly.SourceGenerator.props" Pack="true" PackagePath="build" />
 	</ItemGroup>
-
 	<ItemGroup>
-		<ProjectReference Include="..\..\Validly\Validly.csproj" PackageVersion="[~,2.0.0)"/>
+		<ProjectReference Include="..\..\Validly\Validly.csproj" PackageVersion="[~,2.0.0)" />
 	</ItemGroup>
-
 	<!--	<ItemGroup Condition="$(Configuration) == 'Debug'">-->
 	<!--		<ProjectReference Include="..\..\Validly\Validly.csproj"/>-->
 	<!--	</ItemGroup>-->
-
 	<!--	<ItemGroup Condition="$(Configuration) != 'Debug'">-->
 	<!--		<PackageReference Include="Validly" Version="1.1.1" />-->
 	<!--	</ItemGroup>-->
-
-    <ItemGroup>
-        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis" Version="4.3.1" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.1"/>
+	<ItemGroup>
+		<PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis" Version="4.3.1" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.3.1" />
 		<PackageReference Include="IsExternalInit" Version="1.0.3">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="RequiredMemberAttribute" Version="1.0.0">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-    </ItemGroup>
-
+	</ItemGroup>
 </Project>

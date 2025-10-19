@@ -31,7 +31,7 @@ public static class ServiceProviderHelper
 	/// <returns>The requested service of type T</returns>
 	/// <exception cref="ArgumentNullException">Thrown if the provider is null</exception>
 	/// <exception cref="InvalidOperationException">Thrown if the service is not registered</exception>
-	public static T GetRequiredService<T>(IServiceProvider? provider, object serviceKey)
+	public static T GetRequiredKeyedService<T>(IServiceProvider? provider, object serviceKey)
 		where T : class
 	{
 		switch (provider)

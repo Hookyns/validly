@@ -25,5 +25,7 @@ internal record MethodProperties
 	/// <summary>
 	/// Dependencies of the method
 	/// </summary>
-	public required EquatableArray<string> Dependencies { get; init; }
+	public required EquatableArray<DependencyInjectionInfo> Dependencies { get; init; }
 }
+
+public sealed record DependencyInjectionInfo(string Name, bool IsKeyedService, object? Key);

@@ -46,12 +46,12 @@ internal class PropertiesValidationInvocationBuilder
 			var arguments = string.Join(
 				", ",
 				new[] { properties.PropertyName }.Concat(
-					validator.IsValidMethod.Dependencies.Select(service =>
+					validator.IsValidMethod.Dependencies.Select(dependency =>
 					{
 						// Track the dependency
-						_dependenciesTracker.AddDependency(service);
+						_dependenciesTracker.AddDependency(dependency);
 
-						return $"service{service}";
+						return $"service{dependency.Name}";
 					})
 				)
 			);

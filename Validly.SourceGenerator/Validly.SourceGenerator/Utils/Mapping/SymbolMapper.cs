@@ -12,13 +12,14 @@ internal static class SymbolMapper
 		bool qualifiedReturnTypeName = false
 	)
 	{
-		string[] dependencies = new string[
+		DependencyInjectionInfo[] dependencies = new DependencyInjectionInfo[
 			skipFirstParameter ? Math.Max(methodSymbol.Parameters.Length - 1, 0) : methodSymbol.Parameters.Length
 		];
 
 		for (int i = skipFirstParameter ? 1 : 0; i < methodSymbol.Parameters.Length; i++)
 		{
-			dependencies[i] = methodSymbol.Parameters[i].Type.Name;
+			var parameter = methodSymbol.Parameters[i];
+			dependencies[i] = ExtractDependencyInjectionInfo(parameter);
 		}
 
 		var namedReturnType = methodSymbol.ReturnType as INamedTypeSymbol;
@@ -34,8 +35,17 @@ internal static class SymbolMapper
 				? ToReturnTypeType(namedReturnType, semanticModel)
 				: ReturnTypeType.Void,
 			ReturnTypeGenericArgument = namedReturnType?.TypeArguments.FirstOrDefault()?.Name,
-			Dependencies = new EquatableArray<string>(dependencies),
+			Dependencies = new EquatableArray<DependencyInjectionInfo>(dependencies),
 		};
+	}
+
+	private static DependencyInjectionInfo ExtractDependencyInjectionInfo(IParameterSymbol parameter)
+	{
+		var attributesInfo = parameter.GetAttributes();
+		var attributeData = attributesInfo.FirstOrDefault(x=>
+			x.AttributeClass?.GetQualifiedName() == Consts.FromKeyedServicesAttributeName);
+		var key = attributeData?.ConstructorArguments.FirstOrDefault().Value;
+		return new DependencyInjectionInfo(parameter.Type.Name, attributeData is not null, key);
 	}
 
 	private static string GetMethodName(IMethodSymbol methodSymbol)

@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Microsoft.Extensions.DependencyInjection;
 using Validly;
 using Validly.Validators;
 
@@ -11,7 +12,7 @@ public partial record CreateObjectRequest
 	public string? IntegrationField { get; set; }
 
 	public async IAsyncEnumerable<ValidationMessage> ValidateIntegrationField(
-		IExternalService externalService,
+		[FromKeyedServices("asdas")]IExternalService externalService,
 		[EnumeratorCancellation] CancellationToken ct = default)
 	{
 		if (IntegrationField is null)

@@ -1,9 +1,9 @@
 {
-  "profiles": {
-    "Profile 1": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\..\\Benchmarks\\Benchmarks.Dev\\Benchmarks.Dev.csproj"
-    }
-  },
-  "$schema": "https://json.schemastore.org/launchsettings.json"
+	"profiles": {
+		"Profile 1": {
+			"commandName": "DebugRoslynComponent",
+			"targetProject": "../../Benchmarks/Benchmarks.Dev/Benchmarks.Dev.csproj"
+		}
+	},
+	"$schema": "https://json.schemastore.org/launchsettings.json"
 }

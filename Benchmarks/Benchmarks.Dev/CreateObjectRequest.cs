@@ -12,7 +12,7 @@ public partial record CreateObjectRequest
 	public string? IntegrationField { get; set; }
 
 	public async IAsyncEnumerable<ValidationMessage> ValidateIntegrationField(
-		[FromKeyedServices("asdas")]IExternalService externalService,
+		[FromKeyedServices("KeyName")]IExternalService externalService,
 		[EnumeratorCancellation] CancellationToken ct = default)
 	{
 		if (IntegrationField is null)

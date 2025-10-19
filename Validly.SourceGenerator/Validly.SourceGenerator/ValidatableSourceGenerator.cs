@@ -156,7 +156,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	{
 		if (objectProperties.BeforeValidateMethod is not null)
 		{
-			foreach (string dependency in objectProperties.BeforeValidateMethod.Dependencies)
+			foreach (var dependency in objectProperties.BeforeValidateMethod.Dependencies)
 			{
 				dependencies.AddDependency(dependency);
 			}
@@ -164,7 +164,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 		if (objectProperties.AfterValidateMethod is not null)
 		{
-			foreach (string dependency in objectProperties.AfterValidateMethod.Dependencies)
+			foreach (var dependency in objectProperties.AfterValidateMethod.Dependencies)
 			{
 				dependencies.AddDependency(dependency);
 			}
@@ -320,9 +320,13 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			// for indentation purposes
 			foreach (var dependency in dependencies.Services)
 			{
-				validateMethodFilePart.AppendLine(
-					$"\tvar service{dependency} = ServiceProviderHelper.GetRequiredService<{dependency}>(serviceProvider);"
-				);
+				var serviceProviderString = dependency.IsKeyedService
+					? $"ServiceProviderHelper.GetRequiredKeyedService<{dependency.Name}>(serviceProvider, \"{dependency.Key}\");"
+					: $"ServiceProviderHelper.GetRequiredService<{dependency.Name}>(serviceProvider);";
+
+					validateMethodFilePart.AppendLine(
+						$"\tvar service{dependency.Name} = {serviceProviderString}"
+					);
 			}
 		}
 
@@ -431,7 +435,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			return string.Empty;
 		}
 
-		var arguments = string.Join(", ", method.Dependencies.Select(service => $"service{service}"));
+		var arguments = string.Join(", ", method.Dependencies.Select(dependency => $"service{dependency.Name}"));
 
 		if ((method.ReturnTypeType & ReturnTypeType.Void) != 0)
 		{

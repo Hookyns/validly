@@ -321,7 +321,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			foreach (var dependency in dependencies.Services)
 			{
 				var serviceProviderString = dependency.IsKeyedService
-					? $"ServiceProviderHelper.GetRequiredKeyedService<{dependency.Name}>(serviceProvider, \"{dependency.Key}\");"
+					? $"ServiceProviderHelper.GetRequiredKeyedService<{dependency.Name}>(serviceProvider, {dependency.Key});"
 					: $"ServiceProviderHelper.GetRequiredService<{dependency.Name}>(serviceProvider);";
 
 					validateMethodFilePart.AppendLine(

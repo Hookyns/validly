@@ -42,10 +42,32 @@ internal static class SymbolMapper
 	private static DependencyInjectionInfo ExtractDependencyInjectionInfo(IParameterSymbol parameter)
 	{
 		var attributesInfo = parameter.GetAttributes();
-		var attributeData = attributesInfo.FirstOrDefault(x=>
+		var attributeData = attributesInfo.FirstOrDefault(x =>
 			x.AttributeClass?.GetQualifiedName() == Consts.FromKeyedServicesAttributeName);
-		var key = attributeData?.ConstructorArguments.FirstOrDefault().Value;
+		var constant = attributeData?.ConstructorArguments.FirstOrDefault();
+		var key = GenerateKeyFromConstant(constant);
 		return new DependencyInjectionInfo(parameter.Type.Name, attributeData is not null, key);
+	}
+
+	private static object? GenerateKeyFromConstant(TypedConstant? constant)
+	{
+		var key = constant switch
+		{
+			{ Kind: TypedConstantKind.Enum } enumConstant
+				=> $"({enumConstant.Type?.ToDisplayString()}) {enumConstant.Value}",
+			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_String }
+				=> $"\"{constant.Value.Value}\"",
+			{
+				Kind: TypedConstantKind.Primitive, Type.SpecialType: >= SpecialType.System_Int32,
+				Type.SpecialType: <= SpecialType.System_Double
+			} => constant.Value.Value,
+			{
+				Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_Boolean
+			} => constant.Value.Value is true ? "true" : "false",
+
+			_ => null
+		};
+		return key;
 	}
 
 	private static string GetMethodName(IMethodSymbol methodSymbol)

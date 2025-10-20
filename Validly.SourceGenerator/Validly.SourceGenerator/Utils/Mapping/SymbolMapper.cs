@@ -49,24 +49,27 @@ internal static class SymbolMapper
 		return new DependencyInjectionInfo(parameter.Type.Name, attributeData is not null, key);
 	}
 
-	private static object? GenerateKeyFromConstant(TypedConstant? constant)
+	private static object? GenerateKeyFromConstant(TypedConstant? typedConstant)
 	{
-		var key = constant switch
+		if (typedConstant == null)
 		{
-			{ Kind: TypedConstantKind.Enum } enumConstant
-				=> $"({enumConstant.Type?.ToDisplayString()}) {enumConstant.Value}",
-			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_String }
-				=> $"\"{constant.Value.Value}\"",
-			{
-				Kind: TypedConstantKind.Primitive, Type.SpecialType: >= SpecialType.System_Int32,
-				Type.SpecialType: <= SpecialType.System_Double
-			} => constant.Value.Value,
-			{
-				Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_Boolean
-			} => constant.Value.Value is true ? "true" : "false",
+			return null;
+		}
 
+		var value = typedConstant.Value.Value;
+		var key = typedConstant switch
+		{
+			{ Kind: TypedConstantKind.Enum } enumConstant => $"({enumConstant.Type?.ToDisplayString()}) {enumConstant.Value}",
+			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_String } => $"\"{value}\"",
+			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_Boolean } => $"{value}".ToLowerInvariant(),
+			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_Char } => $"'{value}'",
+			{
+				Kind: TypedConstantKind.Primitive,
+				Type.SpecialType: >= SpecialType.System_Int16 and <= SpecialType.System_Double
+			} => value,
 			_ => null
 		};
+
 		return key;
 	}
 

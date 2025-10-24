@@ -5,4 +5,4 @@ namespace Validly.Validators;
 /// New interface with validation method will be generated for the property.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public class CustomValidationAttribute : Attribute;
+public sealed class CustomValidationAttribute : Attribute;

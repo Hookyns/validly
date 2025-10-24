@@ -8,7 +8,7 @@ namespace Validly.Extensions.Validators.Collections;
 /// </summary>
 [Validator]
 [AttributeUsage(AttributeTargets.Property)]
-public class CollectionSizeBetweenAttribute : Attribute
+public sealed class CollectionSizeBetweenAttribute : Attribute
 {
 	private readonly int _minSize;
 	private readonly int _maxSize;

@@ -10,7 +10,7 @@ namespace Validly;
 /// <param name="Message">Translated message, or default message (e.g., in English)</param>
 /// <param name="ResourceKey">Resource key for localization, which may contain placeholders (e.g., {0}) for passed arguments.</param>
 /// <param name="Args">Arguments</param>
-public partial record ValidationMessage(
+public sealed partial record ValidationMessage(
 	[StringSyntax(StringSyntaxAttribute.CompositeFormat)] string Message,
 	string ResourceKey,
 	params object?[] Args

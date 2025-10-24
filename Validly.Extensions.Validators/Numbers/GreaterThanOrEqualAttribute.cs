@@ -9,7 +9,7 @@ namespace Validly.Extensions.Validators.Numbers;
 [Validator]
 [ValidatorDescription("must be greater than or equal to {0}")]
 [AttributeUsage(AttributeTargets.Property)]
-public class GreaterThanOrEqualAttribute : Attribute
+public sealed class GreaterThanOrEqualAttribute : Attribute
 {
 	private readonly decimal _min;
 	private readonly ValidationMessage _message;

@@ -1,27 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
-
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11"/>
-		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
-		<PackageReference Include="Riok.Mapperly" Version="4.1.1"/>
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
-		<PackageReference Include="FluentValidation" Version="11.11.0"/>
-		<PackageReference Include="SharpGrip.FluentValidation.AutoValidation.Endpoints" Version="1.4.0"/>
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.10" />
+		<PackageReference Include="Riok.Mapperly" Version="4.1.1" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+		<PackageReference Include="FluentValidation" Version="11.11.0" />
+		<PackageReference Include="SharpGrip.FluentValidation.AutoValidation.Endpoints" Version="1.4.0" />
 	</ItemGroup>
-	
 	<ItemGroup>
 		<ProjectReference Include="..\..\Validly.Extensions.AspNetCore\Validly.Extensions.AspNetCore.csproj" />
-		<ProjectReference Include="..\..\Validly.Extensions.Validators\Validly.Extensions.Validators.csproj"/>
-		<ProjectReference Include="..\..\Validly\Validly.csproj"/>
-		<ProjectReference Include="..\..\Validly.SourceGenerator\Validly.SourceGenerator\Validly.SourceGenerator.csproj"
-						  OutputItemType="Analyzer"
-						  ReferenceOutputAssembly="false"/>
+		<ProjectReference Include="..\..\Validly.Extensions.Validators\Validly.Extensions.Validators.csproj" />
+		<ProjectReference Include="..\..\Validly\Validly.csproj" />
+		<ProjectReference
+			Include="..\..\Validly.SourceGenerator\Validly.SourceGenerator\Validly.SourceGenerator.csproj"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+		/>
 	</ItemGroup>
-
 </Project>

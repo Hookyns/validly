@@ -5,7 +5,7 @@ namespace Validly;
 /// <summary>
 /// Object representing the result of a validators' IsValid method
 /// </summary>
-public class Validation
+public sealed class Validation
 {
 	private static readonly Validation SuccessValidation = new();
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace Validly.Utils;
 
@@ -6,7 +7,7 @@ namespace Validly.Utils;
 /// Read-only collection working as a Span
 /// </summary>
 /// <typeparam name="TItem"></typeparam>
-public class SpanCollection<TItem> : IReadOnlyList<TItem>, ICollection<TItem>
+public sealed class SpanCollection<TItem> : IReadOnlyList<TItem>, ICollection<TItem>
 {
 	private TItem[] _list;
 	private int _startPosition;
@@ -58,12 +59,18 @@ public class SpanCollection<TItem> : IReadOnlyList<TItem>, ICollection<TItem>
 		}
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	IEnumerator IEnumerable.GetEnumerator()
 	{
 		return GetEnumerator();
 	}
 
 	/// <inheritdoc />
+#if NET7_0_OR_GREATER
+	[System.Runtime.CompilerServices.MethodImpl(
+		System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization
+	)]
+#endif
 	public void Add(TItem item)
 	{
 		if (_count > (_endPosition - _startPosition))
@@ -82,6 +89,11 @@ public class SpanCollection<TItem> : IReadOnlyList<TItem>, ICollection<TItem>
 	}
 
 	/// <inheritdoc />
+#if NET7_0_OR_GREATER
+	[System.Runtime.CompilerServices.MethodImpl(
+		System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization
+	)]
+#endif
 	public bool Contains(TItem item)
 	{
 		for (int index = _startPosition; index < _startPosition + _count; index++)

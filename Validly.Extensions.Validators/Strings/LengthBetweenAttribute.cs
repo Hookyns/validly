@@ -9,7 +9,7 @@ namespace Validly.Extensions.Validators.Strings;
 [Validator]
 [ValidatorDescription("must be between {0} and {1}")]
 [AttributeUsage(AttributeTargets.Property)]
-public class LengthBetweenAttribute : Attribute
+public sealed class LengthBetweenAttribute : Attribute
 {
 	private readonly int _min;
 	private readonly int _max;

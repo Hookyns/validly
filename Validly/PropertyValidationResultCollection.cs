@@ -6,7 +6,7 @@ namespace Validly;
 /// <summary>
 /// Collection of <see cref="PropertyValidationResult"/>s for all the properties of the object being validated.
 /// </summary>
-public class PropertyValidationResultCollection : IReadOnlyList<PropertyValidationResult>, IDisposable
+public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyValidationResult>, IDisposable
 {
 	/// <summary>
 	/// Empty, readonly, collection
@@ -112,11 +112,7 @@ public class PropertyValidationResultCollection : IReadOnlyList<PropertyValidati
 			new PropertyValidationResult();
 
 		int start = (_count - 1) * _messagesPerProperty;
-		propertyResult.ResetProperty(
-			name,
-			displayName,
-			_messages, start, start + _messagesPerProperty, 0
-		);
+		propertyResult.ResetProperty(name, displayName, _messages, start, start + _messagesPerProperty, 0);
 
 		return propertyResult;
 	}

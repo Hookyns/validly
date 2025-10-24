@@ -11,7 +11,7 @@ namespace Validly.Extensions.Validators.Strings;
 [Validator]
 [ValidatorDescription("must match the required format")]
 [AttributeUsage(AttributeTargets.Property)]
-public class MatchAttribute : Attribute
+public sealed class MatchAttribute : Attribute
 {
 	private readonly Regex _regex;
 

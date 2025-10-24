@@ -9,7 +9,7 @@ namespace Validly.Extensions.Validators.Numbers;
 [Validator]
 [ValidatorDescription("must be less than {0}")]
 [AttributeUsage(AttributeTargets.Property)]
-public class LessThanAttribute : Attribute
+public sealed class LessThanAttribute : Attribute
 {
 	private readonly decimal _max;
 	private readonly ValidationMessage _message;

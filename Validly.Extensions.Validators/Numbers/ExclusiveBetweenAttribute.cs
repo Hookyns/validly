@@ -9,7 +9,7 @@ namespace Validly.Extensions.Validators.Numbers;
 [Validator]
 [ValidatorDescription("must be between {0} and {1}")]
 [AttributeUsage(AttributeTargets.Property)]
-public class ExclusiveBetweenAttribute : Attribute
+public sealed class ExclusiveBetweenAttribute : Attribute
 {
 	private readonly decimal _min;
 	private readonly decimal _max;

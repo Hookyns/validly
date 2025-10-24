@@ -5,7 +5,7 @@ using Validly.Extensions.Validators.Strings;
 
 namespace Benchmarks.Dev;
 
-[Validatable]
+[Validatable(NoAutoValidators = true)]
 public partial class CreateUserRequest
 {
 	[Required]

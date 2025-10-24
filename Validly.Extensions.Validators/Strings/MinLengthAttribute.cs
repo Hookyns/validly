@@ -8,7 +8,7 @@ namespace Validly.Extensions.Validators.Strings;
 /// </summary>
 [Validator]
 [AttributeUsage(AttributeTargets.Property)]
-public class MinLengthAttribute : Attribute
+public sealed class MinLengthAttribute : Attribute
 {
 	private readonly int _minLength;
 	private readonly ValidationMessage _message;

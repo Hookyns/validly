@@ -7,8 +7,9 @@ namespace Validly.Validators;
 /// </summary>
 /// <param name="description">Composite format string for the description. Arguments are the constructor parameters.</param>
 [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Class)]
-public class ValidatorDescriptionAttribute([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string description)
-	: Attribute
+public sealed class ValidatorDescriptionAttribute(
+	[StringSyntax(StringSyntaxAttribute.CompositeFormat)] string description
+) : Attribute
 {
 	/// <summary>
 	/// Composite format string for the description

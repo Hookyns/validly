@@ -301,8 +301,10 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		{
 			validateMethodFilePart.AppendLine(
 				"""
+
 				result.Combine(baseResult);
 				baseResult.Dispose();
+
 				""".Indent(2)
 			);
 		}
@@ -320,13 +322,11 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			// for indentation purposes
 			foreach (var dependency in dependencies.Services)
 			{
-				var serviceProviderString = dependency.IsKeyedService
-					? $"ServiceProviderHelper.GetRequiredKeyedService<{dependency.Name}>(serviceProvider, {dependency.Key});"
+				var serviceProviderString = dependency is KeyedDependencyInjectionInfo keyedDependency
+					? $"ServiceProviderHelper.GetRequiredKeyedService<{keyedDependency.Name}>(serviceProvider, {keyedDependency.KeySyntax});"
 					: $"ServiceProviderHelper.GetRequiredService<{dependency.Name}>(serviceProvider);";
 
-					validateMethodFilePart.AppendLine(
-						$"\tvar service{dependency.Name} = {serviceProviderString}"
-					);
+				validateMethodFilePart.AppendLine($"\tvar service{dependency.Name} = {serviceProviderString}");
 			}
 		}
 
@@ -356,7 +356,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			.AppendLine()
 			.AppendLine("/// <inheritdoc />")
 			.Append(
-				$"async ValueTask<{Consts.ValidationResultGlobalRef}> {Consts.IValidatableGlobalRef}.ValidateAsync(IServiceProvider serviceProvider, CancellationToken ct)"
+				$"async ValueTask<{Consts.ValidationResultGlobalRef}> {Consts.IValidatableGlobalRef}.ValidateAsync({Consts.ServiceProviderGlobalRef} serviceProvider, CancellationToken ct)"
 			)
 			.AppendLine("{")
 			.AppendLine($"\tusing var validationContext = {Consts.ValidationContextGlobalRef}.Create(this);")

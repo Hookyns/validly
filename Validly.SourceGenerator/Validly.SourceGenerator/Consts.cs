@@ -1,32 +1,33 @@
-using Validly.Validators;
-
 namespace Validly.SourceGenerator;
 
 internal static class Consts
 {
-	public const string CustomValidationAttribute =
-		$"Validly.Validators.{nameof(Validly.Validators.CustomValidationAttribute)}";
+	public const string CustomValidationAttribute = "Validly.Validators.CustomValidationAttribute";
 
 	public const string RequiredAttributeQualifiedName = "Validly.Extensions.Validators.Common.RequiredAttribute";
 	public const string InEnumAttributeQualifiedName = "Validly.Extensions.Validators.Enums.InEnumAttribute";
-	public const string ValidatableAttributeQualifiedName = $"Validly.{nameof(ValidatableAttribute)}";
-	public const string ValidatorAttributeQualifiedName = $"Validly.Validators.{nameof(ValidatorAttribute)}";
-	public const string ValidationContextQualifiedName = $"Validly.{nameof(ValidationContext)}";
-	public const string ValidationResultQualifiedName = $"Validly.{nameof(ValidationResult)}";
-	public const string ExtendableValidationResultQualifiedName = $"Validly.{nameof(ExtendableValidationResult)}";
+	public const string ValidatableAttributeQualifiedName = "Validly.ValidatableAttribute";
+	public const string ValidatorAttributeQualifiedName = "Validly.Validators.ValidatorAttribute";
+	public const string ValidationContextQualifiedName = "Validly.ValidationContext";
+	public const string ValidationResultQualifiedName = "Validly.ValidationResult";
+	public const string ExtendableValidationResultQualifiedName = "Validly.ExtendableValidationResult";
 
-	public const string InternalValidationInvokerGlobalRef =
-		$"global::Validly.Validators.{nameof(IInternalValidationInvoker)}";
+	public const string InternalValidationInvokerGlobalRef = "global::Validly.Validators.IInternalValidationInvoker";
 
-	public const string IValidatableGlobalRef = $"global::Validly.{nameof(IValidatable)}";
-	public const string ValidationResultGlobalRef = $"global::Validly.{nameof(ValidationResult)}";
+	public const string IValidatableGlobalRef = "global::Validly.IValidatable";
+	public const string ValidationResultGlobalRef = "global::Validly.ValidationResult";
 	public const string ExpandablePropertyValidationResultGlobalRef =
-		$"global::Validly.{nameof(IExpandablePropertyValidationResult)}";
-	public const string ValidationContextGlobalRef = $"global::Validly.{nameof(ValidationContext)}";
-	public const string ExtendableValidationResultGlobalRef = $"global::Validly.{nameof(ExtendableValidationResult)}";
-	public const string InternalValidationResultGlobalRef = $"global::Validly.{nameof(IInternalValidationResult)}";
+		"global::Validly.IExpandablePropertyValidationResult";
+	public const string ValidationContextGlobalRef = "global::Validly.ValidationContext";
+	public const string ExtendableValidationResultGlobalRef = "global::Validly.ExtendableValidationResult";
+	public const string InternalValidationResultGlobalRef = "global::Validly.IInternalValidationResult";
 	public const string ServiceProviderGlobalRef = $"global::System.{nameof(IServiceProvider)}";
-	public const string ValidationMessageGlobalRef = $"global::Validly.{nameof(ValidationMessage)}";
+	public const string ValidationMessageGlobalRef = "global::Validly.ValidationMessage";
+
+	public const string ValidatableAttributeUseAutoValidatorsPropertyName = "UseAutoValidators";
+	public const string ValidatableAttributeNoAutoValidatorsPropertyName = "NoAutoValidators";
+	public const string ValidatableAttributeUseExitEarlyPropertyName = "UseExitEarly";
+	public const string ValidatableAttributeNoAExitEarlyPropertyName = "NoExitEarly";
 
 	public const string CancellationTokenName = $"{nameof(CancellationToken)}";
 
@@ -38,5 +39,6 @@ internal static class Consts
 	public const string IsValidMethodName = "IsValid";
 	public const string BeforeValidateMethodName = "BeforeValidate";
 	public const string AfterValidateMethodName = "AfterValidate";
-	public const string FromKeyedServicesAttributeName = "Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
+	public const string FromKeyedServicesAttributeName =
+		"Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
 }

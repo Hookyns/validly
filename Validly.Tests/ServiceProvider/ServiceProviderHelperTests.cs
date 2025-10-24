@@ -24,7 +24,7 @@ public class ServiceProviderHelperTests
 	[InlineData(StaticKeys.StringKey)]
 	[InlineData(StaticKeys.IntKey)]
 	[InlineData(StaticKeys.EnumKey)]
-	[InlineData(StaticKeys.UnknowStringKey, false)]
+	[InlineData(StaticKeys.UnknownStringKey, false)]
 	public async Task Validate_DependencyReturnedValue_KeyReturnedValue(object key, bool shouldSucceed = true)
 	{
 		var dependency = Substitute.For<IDependency>();

@@ -5,7 +5,7 @@ namespace Validly;
 /// <summary>
 /// Validation context with information about the object being validated
 /// </summary>
-public record ValidationContext : IDisposable
+public sealed record ValidationContext : IDisposable
 {
 	private static readonly ObjectPool<ValidationContext> Pool = ObjectPool.Create<ValidationContext>();
 

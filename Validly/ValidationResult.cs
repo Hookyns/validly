@@ -15,14 +15,18 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 	/// <summary>
 	/// Global validation messages; messages that are not tied to a specific property
 	/// </summary>
-	protected internal readonly SpanCollection<ValidationMessage>
-	// ReSharper disable once UseCollectionExpression
-	GlobalMessages = new(Array.Empty<ValidationMessage>(), 0, 0, 0);
+	protected readonly SpanCollection<ValidationMessage> GlobalMessages = new(
+		// ReSharper disable once UseCollectionExpression
+		Array.Empty<ValidationMessage>(),
+		0,
+		0,
+		0
+	);
 
 	/// <summary>
 	/// Properties validation results
 	/// </summary>
-	protected internal readonly PropertyValidationResultCollection PropertiesResultCollection = new();
+	protected readonly PropertyValidationResultCollection PropertiesResultCollection = new();
 
 	/// <summary>
 	/// When true, the object has been disposed and is inside the pool
@@ -181,6 +185,7 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 	/// </summary>
 	/// <param name="message"></param>
 	/// <returns></returns>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	void IInternalValidationResult.Add(Validation? message)
 	{
 		if (message is null || message.IsSuccess)

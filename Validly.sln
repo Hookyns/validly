@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validly.Extensions.AspNetCo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validly.Extensions.AspNetCore.Example", "Examples\Validly.Extensions.AspNetCore.Example\Validly.Extensions.AspNetCore.Example.csproj", "{BEB2B557-2E40-4856-8020-D0DEB8E03B54}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validly.SourceGenerator.Tests", "Validly.SourceGenerator.Tests\Validly.SourceGenerator.Tests.csproj", "{0E99C25B-354F-4717-9699-E30A9D3D498C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,6 +81,10 @@ Global
 		{BEB2B557-2E40-4856-8020-D0DEB8E03B54}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEB2B557-2E40-4856-8020-D0DEB8E03B54}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BEB2B557-2E40-4856-8020-D0DEB8E03B54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E99C25B-354F-4717-9699-E30A9D3D498C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E99C25B-354F-4717-9699-E30A9D3D498C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E99C25B-354F-4717-9699-E30A9D3D498C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E99C25B-354F-4717-9699-E30A9D3D498C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{056F16FC-A505-4849-8F47-D8583A5A6A13} = {E8AB26F1-6562-4531-B516-2457130E6B5B}

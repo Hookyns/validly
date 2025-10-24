@@ -5,7 +5,7 @@ namespace Validly.Extensions.AspNetCore;
 /// <summary>
 /// HTTP result for Validly ValidationResult
 /// </summary>
-public class ValidationHttpResult : IResult
+public sealed class ValidationHttpResult : IResult
 {
 	private readonly ValidationResult _validationResult;
 

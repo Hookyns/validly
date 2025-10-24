@@ -5,7 +5,7 @@ namespace Validly.Extensions.AspNetCore;
 /// <summary>
 /// Endpoint filter executing validations for parameters
 /// </summary>
-public class ValidlyValidationFilter : IEndpointFilter
+public sealed class ValidlyValidationFilter : IEndpointFilter
 {
 	private readonly IServiceProvider _serviceProvider;
 

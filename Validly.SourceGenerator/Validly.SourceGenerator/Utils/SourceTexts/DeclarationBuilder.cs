@@ -186,16 +186,7 @@ internal class DeclarationBuilder
 			return;
 		}
 
-		if (_baseClasses.Count > 0)
-		{
-			builder.Append(string.Join(", ", _baseClasses));
-		}
-
-		if (_interfaces.Count > 0)
-		{
-			builder.Append(string.Join(", ", _interfaces));
-		}
-
+		builder.Append(string.Join(", ", _baseClasses.Concat(_interfaces)));
 		builder.AppendLine();
 	}
 

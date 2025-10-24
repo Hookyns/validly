@@ -9,7 +9,7 @@ namespace Validly.Extensions.Validators.Collections;
 /// </summary>
 [Validator]
 [AttributeUsage(AttributeTargets.Property)]
-public class MinCollectionSizeAttribute : Attribute
+public sealed class MinCollectionSizeAttribute : Attribute
 {
 	private readonly int _minSize;
 	private readonly ValidationMessage _message;

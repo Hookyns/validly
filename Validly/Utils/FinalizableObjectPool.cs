@@ -3,7 +3,7 @@ using Microsoft.Extensions.ObjectPool;
 
 namespace Validly.Utils;
 
-internal class FinalizableObjectPool<TItem>
+internal sealed class FinalizableObjectPool<TItem>
 	where TItem : class
 {
 	private readonly IPooledObjectPolicy<TItem> _policy;

@@ -8,7 +8,7 @@ namespace Validly.Extensions.Validators.Strings;
 /// </summary>
 [Validator]
 [AttributeUsage(AttributeTargets.Property)]
-public class MaxLengthAttribute : Attribute
+public sealed class MaxLengthAttribute : Attribute
 {
 	private readonly int _maxLength;
 	private readonly ValidationMessage _message;

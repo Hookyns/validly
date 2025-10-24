@@ -71,6 +71,6 @@ internal static class ValidatorsIncrementalValueProvider
 			ReturnType = "void",
 			ReturnTypeGenericArgument = null,
 			ReturnTypeType = ReturnTypeType.Void,
-			Dependencies = new EquatableArray<string>(),
+			Dependencies = new EquatableArray<DependencyInjectionInfo>(),
 		};
 }

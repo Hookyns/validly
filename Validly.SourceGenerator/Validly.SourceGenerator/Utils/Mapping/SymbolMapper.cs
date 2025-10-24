@@ -12,13 +12,14 @@ internal static class SymbolMapper
 		bool qualifiedReturnTypeName = false
 	)
 	{
-		string[] dependencies = new string[
+		DependencyInjectionInfo[] dependencies = new DependencyInjectionInfo[
 			skipFirstParameter ? Math.Max(methodSymbol.Parameters.Length - 1, 0) : methodSymbol.Parameters.Length
 		];
 
 		for (int i = skipFirstParameter ? 1 : 0; i < methodSymbol.Parameters.Length; i++)
 		{
-			dependencies[i] = methodSymbol.Parameters[i].Type.Name;
+			var parameter = methodSymbol.Parameters[i];
+			dependencies[i] = ExtractDependencyInjectionInfo(parameter);
 		}
 
 		var namedReturnType = methodSymbol.ReturnType as INamedTypeSymbol;
@@ -34,8 +35,42 @@ internal static class SymbolMapper
 				? ToReturnTypeType(namedReturnType, semanticModel)
 				: ReturnTypeType.Void,
 			ReturnTypeGenericArgument = namedReturnType?.TypeArguments.FirstOrDefault()?.Name,
-			Dependencies = new EquatableArray<string>(dependencies),
+			Dependencies = new EquatableArray<DependencyInjectionInfo>(dependencies),
 		};
+	}
+
+	private static DependencyInjectionInfo ExtractDependencyInjectionInfo(IParameterSymbol parameter)
+	{
+		var attributesInfo = parameter.GetAttributes();
+		var attributeData = attributesInfo.FirstOrDefault(x =>
+			x.AttributeClass?.GetQualifiedName() == Consts.FromKeyedServicesAttributeName);
+		var constant = attributeData?.ConstructorArguments.FirstOrDefault();
+		var key = GenerateKeyFromConstant(constant);
+		return new DependencyInjectionInfo(parameter.Type.Name, attributeData is not null, key);
+	}
+
+	private static object? GenerateKeyFromConstant(TypedConstant? typedConstant)
+	{
+		if (typedConstant == null)
+		{
+			return null;
+		}
+
+		var value = typedConstant.Value.Value;
+		var key = typedConstant switch
+		{
+			{ Kind: TypedConstantKind.Enum } enumConstant => $"({enumConstant.Type?.ToDisplayString()}) {enumConstant.Value}",
+			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_String } => $"\"{value}\"",
+			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_Boolean } => $"{value}".ToLowerInvariant(),
+			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_Char } => $"'{value}'",
+			{
+				Kind: TypedConstantKind.Primitive,
+				Type.SpecialType: >= SpecialType.System_Int16 and <= SpecialType.System_Double
+			} => value,
+			_ => null
+		};
+
+		return key;
 	}
 
 	private static string GetMethodName(IMethodSymbol methodSymbol)

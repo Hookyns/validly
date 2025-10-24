@@ -50,13 +50,13 @@ internal class CustomValidationInterfaceBuilder
 			// Dependencies
 			var dependencies = new List<string>();
 
-			foreach (string service in existingMethod.Dependencies)
+			foreach (var dependency in existingMethod.Dependencies)
 			{
 				// Track the dependency
-				_dependenciesTracker.AddDependency(service);
+				_dependenciesTracker.AddDependency(dependency);
 
 				// Create method parameter
-				dependencies.Add($"{service} {service.Substring(0, 1).ToLower() + service.Substring(1)}");
+				dependencies.Add($"{dependency.Name} {dependency.Name.Substring(0, 1).ToLower() + dependency.Name.Substring(1)}");
 			}
 
 			_customValidationMethods.Add(
@@ -72,8 +72,8 @@ internal class CustomValidationInterfaceBuilder
 			// Add CALL
 			var arguments = string.Join(
 				", ",
-				existingMethod.Dependencies.Select(service =>
-					service is Consts.CancellationTokenName ? "ct" : $"service{service}"
+				existingMethod.Dependencies.Select(dependency =>
+					dependency.Name is Consts.CancellationTokenName ? "ct" : $"service{dependency.Name}"
 				)
 			);
 			var call = $"customValidator.Validate{properties.PropertyName}({arguments})";

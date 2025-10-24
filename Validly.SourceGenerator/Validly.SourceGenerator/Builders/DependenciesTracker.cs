@@ -1,17 +1,19 @@
+using Validly.SourceGenerator.Utils.Mapping;
+
 namespace Validly.SourceGenerator.Builders;
 
 public class DependenciesTracker
 {
-	private readonly HashSet<string> _services = new();
+	private readonly HashSet<DependencyInjectionInfo> _services = new();
 
 	public bool HasDependencies => _services.Count > 0;
 
-	public IReadOnlyCollection<string> Services => _services;
+	public IReadOnlyCollection<DependencyInjectionInfo> Services => _services;
 
-	public void AddDependency(string dependency)
+	public void AddDependency(DependencyInjectionInfo dependency)
 	{
 		if (
-			dependency
+			dependency.Name
 			is Consts.ValidationContextName
 				or Consts.ValidationContextQualifiedName
 				or Consts.ValidationResultName

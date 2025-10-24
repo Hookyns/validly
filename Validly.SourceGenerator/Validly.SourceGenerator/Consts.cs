@@ -38,4 +38,5 @@ internal static class Consts
 	public const string IsValidMethodName = "IsValid";
 	public const string BeforeValidateMethodName = "BeforeValidate";
 	public const string AfterValidateMethodName = "AfterValidate";
+	public const string FromKeyedServicesAttributeName = "Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
 }

@@ -13,7 +13,7 @@ internal static class StaticKeys
 
 	public const KeysEnum EnumKey = KeysEnum.Key1;
 	public const string StringKey = "StringKey";
-	public const string UnknowStringKey = "UnknowStringKey";
+	public const string UnknownStringKey = "UnknownStringKey";
 	public const int IntKey = 123;
 
 	public static IValidatable? GetValidatable(object key)

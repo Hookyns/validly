@@ -9,10 +9,12 @@ namespace Validly.Extensions.Validators.Common;
 [Validator]
 [ValidatorDescription("is required")]
 [AttributeUsage(AttributeTargets.Property)]
-public class RequiredAttribute : Attribute
+public sealed class RequiredAttribute : Attribute
 {
-	private static readonly ValidationMessage RequiredMessage =
-		new("A value is required.", "Validly.Validations.Required");
+	private static readonly ValidationMessage RequiredMessage = new(
+		"A value is required.",
+		"Validly.Validations.Required"
+	);
 
 	private readonly bool _allowEmptyStrings;
 

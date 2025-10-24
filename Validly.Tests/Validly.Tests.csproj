@@ -1,47 +1,45 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFrameworks>net472;net8.0;net9.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
-
 		<ValidlyConfiguration>
 			<AutoRequired>disable</AutoRequired>
 			<AutoInEnum>disable</AutoInEnum>
 		</ValidlyConfiguration>
 	</PropertyGroup>
-
 	<ItemGroup>
-		<CompilerVisibleProperty Include="ValidlyConfiguration"/>
+		<CompilerVisibleProperty Include="ValidlyConfiguration" />
 	</ItemGroup>
-
 	<ItemGroup>
-		<PackageReference Include="coverlet.collector" Version="6.0.0"/>
-		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0"/>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
+		<PackageReference Include="coverlet.collector" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
 		<PackageReference Include="NSubstitute" Version="5.3.0" />
-		<PackageReference Include="xunit" Version="2.5.3"/>
-		<PackageReference Include="xunit.runner.visualstudio" Version="2.5.3"/>
+		<PackageReference Include="PolySharp" Version="1.15.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="xunit" Version="2.5.3" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
 		<!--<PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.8.0">-->
 		<!--	<PrivateAssets>all</PrivateAssets>-->
 		<!--	<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
 		<!--</PackageReference>-->
 	</ItemGroup>
-
 	<ItemGroup>
-		<Using Include="Xunit"/>
+		<Using Include="Xunit" />
 	</ItemGroup>
-
 	<ItemGroup>
-		<ProjectReference Include="..\Validly.Extensions.Validators\Validly.Extensions.Validators.csproj"/>
-		<ProjectReference Include="..\Validly\Validly.csproj"/>
-		<ProjectReference Include="..\Validly.SourceGenerator\Validly.SourceGenerator\Validly.SourceGenerator.csproj"
-						  OutputItemType="Analyzer"
-						  ReferenceOutputAssembly="false"/>
+		<ProjectReference Include="..\Validly.Extensions.Validators\Validly.Extensions.Validators.csproj" />
+		<ProjectReference Include="..\Validly\Validly.csproj" />
+		<ProjectReference
+			Include="..\Validly.SourceGenerator\Validly.SourceGenerator\Validly.SourceGenerator.csproj"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+		/>
 	</ItemGroup>
-
 </Project>

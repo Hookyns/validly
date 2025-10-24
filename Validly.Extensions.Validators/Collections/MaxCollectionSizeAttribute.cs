@@ -9,7 +9,7 @@ namespace Validly.Extensions.Validators.Collections;
 /// </summary>
 [Validator]
 [AttributeUsage(AttributeTargets.Property)]
-public class MaxCollectionSizeAttribute : Attribute
+public sealed class MaxCollectionSizeAttribute : Attribute
 {
 	private readonly int _maxSize;
 	private readonly ValidationMessage _message;

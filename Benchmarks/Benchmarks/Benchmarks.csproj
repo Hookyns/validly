@@ -1,31 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFrameworks>netstandard2.0;net472;net8.0</TargetFrameworks>
+		<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))"
+			>true</IsAotCompatible
+		>
+		<PublishTrimmed>true</PublishTrimmed>
+		<OptimizationPreference>speed</OptimizationPreference>
 	</PropertyGroup>
-
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.14.0"/>
+		<PackageReference Include="BenchmarkDotNet" Version="0.15.4" />
 		<PackageReference Include="FluentValidation" Version="11.11.0" />
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.0" />
-		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.10" />
 		<PackageReference Include="PolySharp" Version="1.15.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Validot" Version="2.5.0" />
 	</ItemGroup>
-
 	<ItemGroup>
-		<ProjectReference Include="..\..\Validly\Validly.csproj"/>
-		<ProjectReference Include="..\..\Validly.Extensions.Validators\Validly.Extensions.Validators.csproj"/>
-		<ProjectReference Include="..\..\Validly.SourceGenerator\Validly.SourceGenerator\Validly.SourceGenerator.csproj"
-						  OutputItemType="Analyzer"
-						  ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\..\Validly\Validly.csproj" />
+		<ProjectReference Include="..\..\Validly.Extensions.Validators\Validly.Extensions.Validators.csproj" />
+		<ProjectReference
+			Include="..\..\Validly.SourceGenerator\Validly.SourceGenerator\Validly.SourceGenerator.csproj"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+		/>
 	</ItemGroup>
-
 </Project>

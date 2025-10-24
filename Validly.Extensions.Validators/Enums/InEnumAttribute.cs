@@ -9,10 +9,12 @@ namespace Validly.Extensions.Validators.Enums;
 [Validator]
 [ValidatorDescription("must be one of the defined enum members")]
 [AttributeUsage(AttributeTargets.Property)]
-public class InEnumAttribute : Attribute
+public sealed class InEnumAttribute : Attribute
 {
-	private static readonly ValidationMessage ValidationMessage =
-		new("Must be one of the defined enum members.", "Validly.Validations.InEnum");
+	private static readonly ValidationMessage ValidationMessage = new(
+		"Must be one of the defined enum members.",
+		"Validly.Validations.InEnum"
+	);
 
 	/// <summary>
 	/// Validate the value

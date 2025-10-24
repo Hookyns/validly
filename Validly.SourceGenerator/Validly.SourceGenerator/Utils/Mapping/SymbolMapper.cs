@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Validly.SourceGenerator.Utils.Mapping;
 
@@ -43,34 +44,35 @@ internal static class SymbolMapper
 	{
 		var attributesInfo = parameter.GetAttributes();
 		var attributeData = attributesInfo.FirstOrDefault(x =>
-			x.AttributeClass?.GetQualifiedName() == Consts.FromKeyedServicesAttributeName);
-		var constant = attributeData?.ConstructorArguments.FirstOrDefault();
-		var key = GenerateKeyFromConstant(constant);
-		return new DependencyInjectionInfo(parameter.Type.Name, attributeData is not null, key);
-	}
+			x.AttributeClass?.GetQualifiedName() == Consts.FromKeyedServicesAttributeName
+		);
 
-	private static object? GenerateKeyFromConstant(TypedConstant? typedConstant)
-	{
-		if (typedConstant == null)
+		if (attributeData is not null)
 		{
-			return null;
+			var constant = attributeData.ConstructorArguments.Single();
+			var key = GenerateKeyFromConstant(constant);
+
+			return new KeyedDependencyInjectionInfo(parameter.Type.Name, key);
 		}
 
-		var value = typedConstant.Value.Value;
-		var key = typedConstant switch
-		{
-			{ Kind: TypedConstantKind.Enum } enumConstant => $"({enumConstant.Type?.ToDisplayString()}) {enumConstant.Value}",
-			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_String } => $"\"{value}\"",
-			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_Boolean } => $"{value}".ToLowerInvariant(),
-			{ Kind: TypedConstantKind.Primitive, Type.SpecialType: SpecialType.System_Char } => $"'{value}'",
-			{
-				Kind: TypedConstantKind.Primitive,
-				Type.SpecialType: >= SpecialType.System_Int16 and <= SpecialType.System_Double
-			} => value,
-			_ => null
-		};
+		return new DependencyInjectionInfo(parameter.Type.Name);
+	}
 
-		return key;
+	private static string GenerateKeyFromConstant(TypedConstant typedConstant)
+	{
+		var value = typedConstant.Value;
+
+		if (value is null)
+		{
+			return "null";
+		}
+
+		if (typedConstant is { Kind: TypedConstantKind.Enum } enumConstant)
+		{
+			return $"({enumConstant.Type?.ToDisplayString() ?? "int"}) {enumConstant.Value}";
+		}
+
+		return SymbolDisplay.FormatPrimitive(value, quoteStrings: true, useHexadecimalNumbers: false);
 	}
 
 	private static string GetMethodName(IMethodSymbol methodSymbol)

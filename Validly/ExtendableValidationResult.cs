@@ -7,7 +7,7 @@ namespace Validly;
 /// <summary>
 /// Represents the result of a validation. Variant with methods for adding global messages and properties results.
 /// </summary>
-public class ExtendableValidationResult : ValidationResult, IResettable
+public sealed class ExtendableValidationResult : ValidationResult, IResettable
 {
 	private static readonly FinalizableObjectPool<ExtendableValidationResult> Pool =
 		FinalizableObjectPool.Create<ExtendableValidationResult>();
@@ -41,10 +41,7 @@ public class ExtendableValidationResult : ValidationResult, IResettable
 		_disposed = false;
 		var messages = GlobalMessagePool.Rent(ValidlyOptions.GlobalMessagesPoolSize);
 		GlobalMessages.Reset(messages, 0, messages.Length, 0);
-		PropertiesResultCollection.Reset(
-			propertiesCount,
-			ValidlyOptions.PropertyMessagesPoolSize
-		);
+		PropertiesResultCollection.Reset(propertiesCount, ValidlyOptions.PropertyMessagesPoolSize);
 	}
 
 	/// <inheritdoc />

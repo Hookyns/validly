@@ -5,7 +5,7 @@ namespace Validly;
 /// <summary>
 /// Object holding the result of a property validation
 /// </summary>
-public class PropertyValidationResult : IInternalPropertyValidationResult, IExpandablePropertyValidationResult
+public sealed class PropertyValidationResult : IInternalPropertyValidationResult, IExpandablePropertyValidationResult
 {
 	/// <summary>
 	/// Error messages generated during validation
@@ -45,9 +45,7 @@ public class PropertyValidationResult : IInternalPropertyValidationResult, IExpa
 		PropertyPath = propertyPath;
 		PropertyDisplayName = propertyDisplayName;
 
-		_messages = new SpanCollection<ValidationMessage>(
-			messages.ToArray(),0, messages.Count - 1, messages.Count
-		);
+		_messages = new SpanCollection<ValidationMessage>(messages.ToArray(), 0, messages.Count - 1, messages.Count);
 	}
 
 	/// <summary>
@@ -59,7 +57,14 @@ public class PropertyValidationResult : IInternalPropertyValidationResult, IExpa
 		PropertyDisplayName = null!;
 	}
 
-	internal void ResetProperty(string propertyPath, string propertyDisplayName, ValidationMessage[] messages, int messagesStartPosition, int messagesEndPosition, int messagesCount)
+	internal void ResetProperty(
+		string propertyPath,
+		string propertyDisplayName,
+		ValidationMessage[] messages,
+		int messagesStartPosition,
+		int messagesEndPosition,
+		int messagesCount
+	)
 	{
 		PropertyPath = propertyPath;
 		PropertyDisplayName = propertyDisplayName;

@@ -1,7 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 
 namespace Benchmarks.Dev;
 
+[SimpleJob(RuntimeMoniker.Net80, baseline: true)]
+[SimpleJob(RuntimeMoniker.Net90)]
+// [SimpleJob(RuntimeMoniker.NetCoreApp31)]
+[SimpleJob(RuntimeMoniker.Net10_0)]
 public class DevValidlyBenchmark
 {
 	[ParamsSource(nameof(Objects))]

@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))"
-			>true</IsAotCompatible
-		>
-		<PublishTrimmed>true</PublishTrimmed>
+		<!--		<IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))"-->
+		<!--			>true</IsAotCompatible-->
+		<!--		>-->
+		<!--		<PublishTrimmed>true</PublishTrimmed>-->
 		<OptimizationPreference>speed</OptimizationPreference>
 	</PropertyGroup>
 	<ItemGroup>

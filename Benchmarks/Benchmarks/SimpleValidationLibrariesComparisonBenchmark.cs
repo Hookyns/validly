@@ -6,9 +6,9 @@ using Validator = System.ComponentModel.DataAnnotations.Validator;
 
 namespace Benchmarks;
 
-[SimpleJob(RuntimeMoniker.Net472, baseline: true)]
+// [SimpleJob(RuntimeMoniker.Net472, baseline: true)]
 // [SimpleJob(RuntimeMoniker.NetCoreApp31)]
-[SimpleJob(RuntimeMoniker.Net80)]
+[SimpleJob(RuntimeMoniker.Net90)]
 // [SimpleJob(RuntimeMoniker.NativeAot80)]
 [MaxIterationCount(20)]
 // [RPlotExporter]
@@ -80,7 +80,7 @@ public class SimpleValidationLibrariesComparisonBenchmark
 	// [Benchmark(Description = "Validly (exit-early)")]
 	// public bool ValidlyExitEarly()
 	// {
-	// 	using var result = NumberOfInvalidValues.Validate();
+	// 	using var result = NumberOfInvalidValuesExitEarly.Validate();
 	// 	return result.IsSuccess;
 	// }
 

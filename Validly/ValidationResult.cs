@@ -239,6 +239,7 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 
 	void IInternalValidationResult.Combine(ValidationResult result)
 	{
+		// TODO: How about some CopyTo method? And what about result.GlobalMessages reset? (Cuz we reset result.PropertiesResultCollection but not the GlobalMessages)
 		// POP all messages from the result and add them to the current result
 		for (int index = 0; index < result.GlobalMessages.Count; index++)
 		{

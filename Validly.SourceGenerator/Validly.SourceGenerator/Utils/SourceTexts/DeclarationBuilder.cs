@@ -104,6 +104,17 @@ internal class DeclarationBuilder
 		return this;
 	}
 
+	public DeclarationBuilder AddMemberIf(SourceTextSectionBuilder memberSource, bool condition)
+	{
+		if (!condition)
+		{
+			return this;
+		}
+
+		_memberSources.Add(memberSource);
+		return this;
+	}
+
 	public DeclarationBuilder Partial()
 	{
 		_partial = "partial";

@@ -1,16 +1,19 @@
 namespace Validly.Validators;
 
 /// <summary>
-/// Interface for internal use to invoke validation of nested objects
+/// Interface for internal use to communicate with validators of nested objects
 /// </summary>
 public interface IInternalValidationInvoker
 {
 	/// <summary>
-	/// Validates the object
+	/// Gets a validation context from validated object
+	/// </summary>
+	/// <returns></returns>
+	ValidationContext? GetValidationContext();
+
+	/// <summary>
+	/// Sets the validation context to be used
 	/// </summary>
 	/// <param name="validationContext"></param>
-	/// <param name="serviceProvider"></param>
-	/// <param name="ct"></param>
-	/// <returns></returns>
-	ValueTask<ValidationResult> ValidateAsync(ValidationContext validationContext, IServiceProvider? serviceProvider, CancellationToken ct);
+	void SetValidationContext(ValidationContext validationContext);
 }

@@ -5,11 +5,10 @@ namespace Validly.SourceGenerator.Utils;
 
 public static class Extensions
 {
-	private static readonly SymbolDisplayFormat QualifiedNameArityFormat =
-		new(
-			globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
-			typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces
-		);
+	private static readonly SymbolDisplayFormat QualifiedNameArityFormat = new(
+		globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
+		typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces
+	);
 
 	/// <summary>
 	/// Filter-out null values

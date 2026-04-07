@@ -43,5 +43,6 @@ public class CorrectConstsTests
 		);
 		Assert.Equal(Consts.ValidatableAttributeUseExitEarlyPropertyName, nameof(ValidatableAttribute.UseExitEarly));
 		Assert.Equal(Consts.ValidatableAttributeNoAExitEarlyPropertyName, nameof(ValidatableAttribute.NoExitEarly));
+		Assert.Equal(Consts.ValidationContextDisposerGlobalRef, $"global::Validly.{nameof(ValidationContextDisposer)}");
 	}
 }

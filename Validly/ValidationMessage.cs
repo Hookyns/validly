@@ -39,16 +39,23 @@ public sealed partial record ValidationMessage(
 	[JsonSerializable(typeof(string))]
 	[JsonSerializable(typeof(char))]
 	[JsonSerializable(typeof(decimal))]
-	[JsonSerializable(typeof(byte))]
-	[JsonSerializable(typeof(short))]
-	[JsonSerializable(typeof(int))]
 	[JsonSerializable(typeof(double))]
 	[JsonSerializable(typeof(float))]
 	[JsonSerializable(typeof(bool))]
+	[JsonSerializable(typeof(byte))]
+	[JsonSerializable(typeof(short))]
+	[JsonSerializable(typeof(int))]
+	[JsonSerializable(typeof(uint))]
+	[JsonSerializable(typeof(long))]
+	[JsonSerializable(typeof(ulong))]
 	[JsonSerializable(typeof(Guid))]
 	[JsonSerializable(typeof(DateTime))]
 	[JsonSerializable(typeof(TimeSpan))]
 	[JsonSerializable(typeof(DateTimeOffset))]
+#if NET5_0_OR_GREATER
+	[JsonSerializable(typeof(DateOnly))]
+	[JsonSerializable(typeof(TimeOnly))]
+#endif
 	[JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Serialization)]
 	private partial class ArgumentJsonContext : JsonSerializerContext;
 }

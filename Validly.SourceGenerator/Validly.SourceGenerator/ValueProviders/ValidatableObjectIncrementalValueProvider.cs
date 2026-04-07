@@ -62,6 +62,7 @@ internal static class ValidatableObjectIncrementalValueProvider
 			Properties = new EquatableArray<PropertyProperties>(properties),
 			Methods = new EquatableArray<MethodProperties>(methods),
 			InheritsValidatableObject = inheritsValidatableObject,
+			IsSealed = typeSymbol.IsSealed,
 			BeforeValidateMethod = methods.FirstOrDefault(static m => m.MethodName == Consts.BeforeValidateMethodName),
 			AfterValidateMethod = methods.FirstOrDefault(static m => m.MethodName == Consts.AfterValidateMethodName),
 		};

@@ -44,6 +44,11 @@ internal record ObjectProperties
 	public required bool InheritsValidatableObject { get; init; }
 
 	/// <summary>
+	/// Is sealed class
+	/// </summary>
+	public required bool IsSealed { get; init; }
+
+	/// <summary>
 	/// List of properties
 	/// </summary>
 	public required EquatableArray<PropertyProperties> Properties { get; init; }

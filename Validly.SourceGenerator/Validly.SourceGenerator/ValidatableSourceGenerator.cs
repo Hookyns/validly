@@ -211,7 +211,10 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	)
 	{
 		var asyncKeyword = isAsync ? "async" : string.Empty;
-		var overrideVirtual = properties.Object.InheritsValidatableObject ? "override" : "virtual";
+		var overrideVirtual =
+			properties.Object.InheritsValidatableObject ? "override"
+			: properties.Object.IsSealed ? ""
+			: "virtual";
 		var serviceProviderParameter = dependencies.HasDependencies
 			? $"{Consts.ServiceProviderGlobalRef} serviceProvider"
 			: string.Empty;
@@ -317,7 +320,9 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 						dependencies.HasDependencies ? "serviceProvider, " : string.Empty
 					)}}ct)) {
 						nestedPropertiesCount += (({{Consts.InternalValidationResultGlobalRef}})baseResult).GetPropertiesCount();
-					""".Indent(2)
+					""".Indent(
+						2
+					)
 				);
 			}
 		}
@@ -436,7 +441,10 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		var validateReturnType = isAsync
 			? $"ValueTask<{Consts.ValidationResultGlobalRef}>"
 			: Consts.ValidationResultGlobalRef;
-		var overrideVirtual = properties.Object.InheritsValidatableObject ? "override" : "virtual";
+		var overrideVirtual =
+			properties.Object.InheritsValidatableObject ? "override"
+			: properties.Object.IsSealed ? ""
+			: "virtual";
 		var serviceProviderParameter = dependencies.HasDependencies
 			? $"{Consts.ServiceProviderGlobalRef} serviceProvider"
 			: string.Empty;

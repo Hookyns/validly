@@ -28,7 +28,7 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
-		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="[8.0.0,)" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="assets/README.md" Pack="true" PackagePath="" />

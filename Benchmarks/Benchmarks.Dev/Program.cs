@@ -37,6 +37,8 @@ using Benchmarks.Dev;
 // 	.Instance.AddDiagnoser(MemoryDiagnoser.Default)
 // 	.AddJob(job);
 
+DevValidlyBenchmark.EnableOneTest = false;
+
 // RUN
 BenchmarkRunner.Run<DevValidlyBenchmark>();
 // BenchmarkRunner.Run<DevValidlyExitEarlyBenchmark>();

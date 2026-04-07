@@ -1,27 +1,20 @@
 <Project>
 	<PropertyGroup>
-		<CommitId Condition="'$(CommitId)' == ''">00000000</CommitId>
-	</PropertyGroup>
-
-	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>12</LangVersion>
 		<IsPackable>false</IsPackable>
-
 		<Authors>Roman Jámbor</Authors>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<RepositoryUrl>https://github.com/Hookyns/validly</RepositoryUrl>
-
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
-
 	<Target Name="UseExplicitPackageVersions" BeforeTargets="GenerateNuspec">
 		<ItemGroup>
 			<_ProjectReferencesWithVersions Condition="'%(FullPath)' != ''">
-				<PackageVersion>@(ProjectReference->'%(PackageVersion)')</PackageVersion>
+				<PackageVersion>@(ProjectReference-&gt;'%(PackageVersion)')</PackageVersion>
 			</_ProjectReferencesWithVersions>
 			<_ProjectReferencesWithVersions Condition="'%(Identity)' != '' And '%(PackageVersion)' != ''">
 				<ProjectVersion>$([System.String]::new('%(PackageVersion)').Replace('~',%(ProjectVersion)))</ProjectVersion>

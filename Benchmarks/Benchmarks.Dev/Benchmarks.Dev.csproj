@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<ValidlyConfiguration>
@@ -13,10 +13,14 @@
 		>
 		<OptimizationPreference>speed</OptimizationPreference>
 		<!--		<IlcInstructionSet>sse4.2</IlcInstructionSet>-->
-		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<!--		<RuntimeIdentifier>win-x64</RuntimeIdentifier>-->
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.15.4" />
+		<PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\Validly\Validly.csproj" />

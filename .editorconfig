@@ -17,3 +17,5 @@ end_of_line = lf
 indent_style = space
 end_of_line = lf
 
+[*.cs]
+dotnet_diagnostic.RS1035.severity = none

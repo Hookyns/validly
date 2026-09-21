@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Http;
 
 namespace Validly.Extensions.AspNetCore;
@@ -29,8 +30,6 @@ public sealed class ValidlyValidationFilter : IEndpointFilter
 
 			if (argument is IValidatable validatable)
 			{
-				// Do not use "using"; we don't want to dispose it here.
-				// The ValidationHttpResult will dispose in case there are errors.
 				var resultTask = validatable.ValidateAsync(_serviceProvider, ct);
 
 				ValidationResult validationResult;
@@ -48,16 +47,18 @@ public sealed class ValidlyValidationFilter : IEndpointFilter
 				{
 					if (!validationResult.IsSuccess)
 					{
-						// TODO: This allocates memory. Optimize! For disposing and returning back to the pool we can use invocationContext.HttpContext.Response.RegisterForDispose(disposable)
-						return new ValidationHttpResult(validationResult);
+						return TypedResults.Content(
+							validationResult.GetProblemDetailsJson(),
+							"application/problem+json",
+							Encoding.UTF8,
+							StatusCodes.Status400BadRequest
+						);
 					}
-
-					// Dispose if not used for ValidationHttpResult
-					validationResult.Dispose();
 				}
-				catch (Exception)
+				finally
 				{
-					// Try to Dispose
+					// The problem details JSON is already materialized at this point,
+					// so it's safe to return the result back to the pool here.
 					validationResult.Dispose();
 				}
 			}

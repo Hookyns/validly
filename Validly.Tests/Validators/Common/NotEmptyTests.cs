@@ -16,6 +16,32 @@ partial class NotEmptyCollectionTestObject
 	public required List<int> Values { get; init; }
 }
 
+readonly record struct StronglyTypedId(Guid Value)
+{
+	public static readonly StronglyTypedId Empty = new(Guid.Empty);
+}
+
+[Validatable(NoAutoValidators = true)]
+partial class ObjectWithStronglyTypedId
+{
+	[NotEmpty]
+	public required StronglyTypedId Id { get; init; }
+}
+
+[Validatable(NoAutoValidators = true)]
+partial class ObjectWithNullableStronglyTypedId
+{
+	[NotEmpty]
+	public required StronglyTypedId? Id { get; init; }
+}
+
+[Validatable(NoAutoValidators = true)]
+partial class ObjectWithStructCollection
+{
+	[NotEmpty]
+	public required ArraySegment<int> Values { get; init; }
+}
+
 [Validatable(NoAutoValidators = true)]
 partial class NotEmptyEnumerableTestObject
 {
@@ -92,5 +118,68 @@ public class NotEmptyTests
 	{
 		var result = new NotEmptyEnumerableTestObject { Values = null! }.Validate();
 		Assert.True(result.IsSuccess);
+	}
+
+	[Fact]
+	public void StronglyTypedId_IsValid()
+	{
+		var result = new ObjectWithStronglyTypedId { Id = new StronglyTypedId(Guid.NewGuid()) }.Validate();
+		Assert.True(result.IsSuccess);
+	}
+
+	[Fact]
+	public void StronglyTypedId_IsInvalid()
+	{
+		var result = new ObjectWithStronglyTypedId { Id = default }.Validate();
+		Assert.False(result.IsSuccess);
+	}
+
+	[Fact]
+	public void EmptyStronglyTypedId_IsInvalid()
+	{
+		var result = new ObjectWithStronglyTypedId { Id = StronglyTypedId.Empty }.Validate();
+		Assert.False(result.IsSuccess);
+	}
+
+	[Fact]
+	public void NullableStronglyTypedId_IsValid()
+	{
+		var result = new ObjectWithNullableStronglyTypedId { Id = new StronglyTypedId(Guid.NewGuid()) }.Validate();
+		Assert.True(result.IsSuccess);
+	}
+
+	[Fact]
+	public void NullableStronglyTypedId_IsInvalid()
+	{
+		var result = new ObjectWithNullableStronglyTypedId { Id = default(StronglyTypedId) }.Validate();
+		Assert.False(result.IsSuccess);
+	}
+
+	[Fact]
+	public void NullStronglyTypedId_IsValid()
+	{
+		var result = new ObjectWithNullableStronglyTypedId { Id = null }.Validate();
+		Assert.True(result.IsSuccess);
+	}
+
+	[Fact]
+	public void StructCollection_IsValid()
+	{
+		var result = new ObjectWithStructCollection { Values = new ArraySegment<int>(new[] { 1, 2, 3 }) }.Validate();
+		Assert.True(result.IsSuccess);
+	}
+
+	[Fact]
+	public void StructCollection_IsInvalid()
+	{
+		var result = new ObjectWithStructCollection { Values = new ArraySegment<int>(Array.Empty<int>()) }.Validate();
+		Assert.False(result.IsSuccess);
+	}
+
+	[Fact]
+	public void DefaultStructCollection_IsInvalid()
+	{
+		var result = new ObjectWithStructCollection { Values = default }.Validate();
+		Assert.False(result.IsSuccess);
 	}
 }

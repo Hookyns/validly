@@ -56,6 +56,13 @@ internal static class ValidatableObjectIncrementalValueProvider
 			ClassOrRecordKeyword = typeSymbol.IsRecord ? "record" : "class",
 			Accessibility = typeSymbol.DeclaredAccessibility,
 			Name = typeSymbol.Name,
+			TypeParameters = new EquatableArray<string>(
+				typeSymbol
+					.TypeParameters.Select(static typeParameter =>
+						typeParameter.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+					)
+					.ToArray()
+			),
 			Namespace = typeSymbol.ContainingNamespace.CanBeReferencedByName
 				? typeSymbol.ContainingNamespace.ToString()
 				: null,

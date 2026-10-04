@@ -44,7 +44,14 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 		// Name of the class with RULEs
 		string rulesClassName = $"{properties.Object.Name}Rules";
-		string customValidatorInterfaceName = $"I{properties.Object.Name}CustomValidation";
+
+		// Generic objects; type parameters have to be repeated on the generated partial declaration
+		// > <T1, T2>
+		var typeParameters = properties.Object.TypeParameters.GetArray() ?? Array.Empty<string>();
+		string typeParameterList = typeParameters.Length == 0 ? string.Empty : $"<{string.Join(", ", typeParameters)}>";
+
+		// Generic too, so it does not collide with the interface of a non-generic object with the same name
+		string customValidatorInterfaceName = $"I{properties.Object.Name}CustomValidation{typeParameterList}";
 
 		var dependencies = new DependenciesTracker();
 		AppendDependenciesOfBeforeAndAfterMethods(properties.Object, dependencies);
@@ -102,7 +109,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		// Generate the validator part for the original object
 		// > public partial class Xxx : IValidatable, IInternalValidationInvoker { ... }
 		var validatorClassBuilder = DeclarationBuilder
-			.CreateClassOrRecord(properties.Object.ClassOrRecordKeyword, properties.Object.Name)
+			.CreateClassOrRecord(properties.Object.ClassOrRecordKeyword, properties.Object.Name + typeParameterList)
 			.SetAccessModifier(properties.Object.Accessibility)
 			.AddUsings(properties.Object.Usings.GetArray() ?? Array.Empty<string>())
 			// .SetNamespace(properties.Object.Namespace)
@@ -149,7 +156,13 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			+ Environment.NewLine
 			+ (properties.Object.Namespace is null ? string.Empty : "}");
 
-		context.AddSource($"{properties.Object.Name}.Validator.g.cs", SourceText.From(sourceText, Encoding.UTF8));
+		// > Xxx.Validator.g.cs | Xxx{T1,T2}.Validator.g.cs
+		string hintName =
+			typeParameters.Length == 0
+				? properties.Object.Name
+				: $"{properties.Object.Name}{{{string.Join(",", typeParameters)}}}";
+
+		context.AddSource($"{hintName}.Validator.g.cs", SourceText.From(sourceText, Encoding.UTF8));
 	}
 
 	private static void AppendDependenciesOfBeforeAndAfterMethods(

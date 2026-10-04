@@ -39,6 +39,11 @@ internal record ObjectProperties
 	public required string Name { get; init; }
 
 	/// <summary>
+	/// Names of the generic type parameters; empty for non-generic objects
+	/// </summary>
+	public required EquatableArray<string> TypeParameters { get; init; }
+
+	/// <summary>
 	/// Object inherits
 	/// </summary>
 	public required bool InheritsValidatableObject { get; init; }

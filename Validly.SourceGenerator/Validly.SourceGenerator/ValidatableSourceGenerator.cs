@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Validly.SourceGenerator.Builders;
 using Validly.SourceGenerator.Dtos;
@@ -380,11 +381,15 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				"""
 			);
 
+			string combineNestedArgs = property.JsonName is null
+				? SymbolDisplay.FormatLiteral(property.PropertyName, true)
+				: $"{SymbolDisplay.FormatLiteral(property.PropertyName, true)}, {SymbolDisplay.FormatLiteral(property.JsonName, true)}";
+
 			nestedValidationsDispose.Add(
 				$$"""
 				if (nestedValidationResult{{nestedIndex}} is not null)
 				{
-					result.CombineNested(nestedValidationResult{{nestedIndex}}, "{{property.PropertyName}}");
+					result.CombineNested(nestedValidationResult{{nestedIndex}}, {{combineNestedArgs}});
 					nestedValidationResult{{nestedIndex}}.Dispose();
 				}
 				"""

@@ -112,7 +112,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 		_count = 0;
 	}
 
-	internal PropertyValidationResult InitProperty(string name, string displayName)
+	internal PropertyValidationResult InitProperty(string name, string displayName, string? jsonName)
 	{
 		if (_count >= _propertiesResult.Length)
 		{
@@ -128,7 +128,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 			new PropertyValidationResult();
 
 		int start = (_count - 1) * _messagesPerProperty;
-		propertyResult.ResetProperty(name, displayName, _messages, start, start + _messagesPerProperty, 0);
+		propertyResult.ResetProperty(name, displayName, jsonName, _messages, start, start + _messagesPerProperty, 0);
 
 		return propertyResult;
 	}
@@ -148,7 +148,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 		for (int index = 0; index < collection._count; index++)
 		{
 			PropertyValidationResult source = collection._propertiesResult[index];
-			AddCopy(source, source.PropertyPath, findExisting: false);
+			AddCopy(source, findExisting: false);
 		}
 
 		return this;
@@ -167,7 +167,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	{
 		if (_pooled)
 		{
-			AddCopy(propertyValidationResult, propertyValidationResult.PropertyPath, findExisting: true);
+			AddCopy(propertyValidationResult, findExisting: true);
 			return;
 		}
 
@@ -195,15 +195,20 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	}
 
 	/// <summary>
-	/// Copy the property result (its messages) into a property result owned by this collection
+	/// Copy the property result (its path and messages) into a property result owned by this collection
 	/// </summary>
 	/// <param name="source">Property result to copy; it is not referenced by this collection afterward</param>
-	/// <param name="propertyPath">Path of the property in this collection</param>
 	/// <param name="findExisting">Merge messages into an existing property result with the same path</param>
-	internal void AddCopy(PropertyValidationResult source, string propertyPath, bool findExisting)
+	/// <returns>The property result owned by this collection</returns>
+	internal PropertyValidationResult AddCopy(PropertyValidationResult source, bool findExisting)
 	{
-		PropertyValidationResult? target = findExisting ? FindProperty(propertyPath) : null;
-		target ??= InitProperty(propertyPath, source.PropertyDisplayName);
+		PropertyValidationResult? target = findExisting ? FindProperty(source.PropertyPath) : null;
+
+		if (target is null)
+		{
+			target = InitProperty(source.PropertyPath, source.PropertyDisplayName, null);
+			target.CopyPathFrom(source);
+		}
 
 		IReadOnlyList<ValidationMessage> messages = source.Messages;
 		var expandable = (IExpandablePropertyValidationResult)target;
@@ -212,6 +217,8 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 		{
 			expandable.Add(messages[index]);
 		}
+
+		return target;
 	}
 
 	/// <summary>

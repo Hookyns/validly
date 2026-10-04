@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
 using Validly.SourceGenerator.Dtos;
 using Validly.SourceGenerator.Utils.Mapping;
 
@@ -70,10 +71,17 @@ internal class PropertiesValidationInvocationBuilder
 			return;
 		}
 
+		var propertyNameLiteral = SymbolDisplay.FormatLiteral(properties.PropertyName, true);
 		var propertyNameAndDisplayNameArgs =
 			properties.PropertyName == properties.DisplayName
-				? $"\"{properties.PropertyName}\""
-				: $"\"{properties.PropertyName}\", \"{properties.DisplayName}\"";
+				? propertyNameLiteral
+				: $"{propertyNameLiteral}, {SymbolDisplay.FormatLiteral(properties.DisplayName, true)}";
+
+		var initPropertyArgs = properties.JsonName is null
+			? propertyNameAndDisplayNameArgs
+			: properties.PropertyName == properties.DisplayName
+				? $"{propertyNameLiteral}, null, {SymbolDisplay.FormatLiteral(properties.JsonName, true)}"
+				: $"{propertyNameAndDisplayNameArgs}, {SymbolDisplay.FormatLiteral(properties.JsonName, true)}";
 
 		var sb = new StringBuilder();
 
@@ -155,7 +163,7 @@ internal class PropertiesValidationInvocationBuilder
 			$$"""
 			// Validate "{{properties.PropertyName}}" property
 			context.SetProperty({{propertyNameAndDisplayNameArgs}});
-			propertyResult = result.InitProperty({{propertyNameAndDisplayNameArgs}});
+			propertyResult = result.InitProperty({{initPropertyArgs}});
 			{{sb}}
 			"""
 		);

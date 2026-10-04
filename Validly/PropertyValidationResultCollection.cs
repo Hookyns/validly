@@ -105,14 +105,14 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 		_count = 0;
 	}
 
-	internal PropertyValidationResult InitProperty(string name, string displayName)
+	internal PropertyValidationResult InitProperty(string name, string displayName, string? jsonName)
 	{
 		var propertyResult = _propertiesResult[_count++] ??=
 			// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 			new PropertyValidationResult();
 
 		int start = (_count - 1) * _messagesPerProperty;
-		propertyResult.ResetProperty(name, displayName, _messages, start, start + _messagesPerProperty, 0);
+		propertyResult.ResetProperty(name, displayName, jsonName, _messages, start, start + _messagesPerProperty, 0);
 
 		return propertyResult;
 	}

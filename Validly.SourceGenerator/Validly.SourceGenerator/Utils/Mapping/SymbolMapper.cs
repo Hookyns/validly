@@ -98,6 +98,12 @@ internal static class SymbolMapper
 					.FirstOrDefault(attr => attr.AttributeClass?.Name == "DisplayNameAttribute")
 					?.ConstructorArguments[0]
 					.Value?.ToString() ?? propertySymbol.Name,
+			JsonName = attrs
+				.FirstOrDefault(attr =>
+					attr.AttributeClass?.GetQualifiedName() == Consts.JsonPropertyNameAttributeQualifiedName
+				)
+				?.ConstructorArguments.FirstOrDefault()
+				.Value as string,
 			PropertyType = propertySymbol.Type.Name,
 			PropertyTypeKind = propertySymbol.Type.TypeKind,
 			Nullable =

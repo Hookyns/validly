@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using Validly.Utils;
 
 namespace Validly;
@@ -12,6 +14,21 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	/// </summary>
 	// ReSharper disable once UseCollectionExpression
 	private readonly SpanCollection<ValidationMessage> _messages = new(Array.Empty<ValidationMessage>(), 0, 0, 0);
+
+	/// <summary>
+	/// CLR name of the validated property
+	/// </summary>
+	private string _propertyName;
+
+	/// <summary>
+	/// Explicit JSON name of the validated property (from [JsonPropertyName])
+	/// </summary>
+	private string? _propertyJsonName;
+
+	/// <summary>
+	/// Parent segments of the path (root first); null if the property is not nested
+	/// </summary>
+	private PropertyPathSegment? _parentSegments;
 
 	/// <summary>
 	/// Path of the validated property from the root object
@@ -45,6 +62,20 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 		PropertyPath = propertyPath;
 		PropertyDisplayName = propertyDisplayName;
 
+		// Split the path into segments; there are no explicit JSON names available
+		int lastSeparator = propertyPath.LastIndexOf('/');
+		_propertyName = propertyPath.Substring(lastSeparator + 1);
+
+		if (lastSeparator > 0)
+		{
+			string[] parents = propertyPath.Substring(0, lastSeparator).Split('/');
+
+			for (int index = parents.Length - 1; index >= 0; index--)
+			{
+				_parentSegments = new PropertyPathSegment(parents[index], null, _parentSegments);
+			}
+		}
+
 		_messages = new SpanCollection<ValidationMessage>(messages.ToArray(), 0, messages.Count - 1, messages.Count);
 	}
 
@@ -55,11 +86,13 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	{
 		PropertyPath = null!;
 		PropertyDisplayName = null!;
+		_propertyName = null!;
 	}
 
 	internal void ResetProperty(
 		string propertyPath,
 		string propertyDisplayName,
+		string? propertyJsonName,
 		ValidationMessage[] messages,
 		int messagesStartPosition,
 		int messagesEndPosition,
@@ -68,7 +101,55 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	{
 		PropertyPath = propertyPath;
 		PropertyDisplayName = propertyDisplayName;
+		_propertyName = propertyPath;
+		_propertyJsonName = propertyJsonName;
+		_parentSegments = null;
 		_messages.Reset(messages, messagesStartPosition, messagesEndPosition, messagesCount);
+	}
+
+	/// <summary>
+	/// Returns path of the validated property from the root object, as it appears in JSON.
+	/// Segments are separated by "/" and escaped according to RFC 6901 (JSON pointer).
+	/// </summary>
+	/// <remarks>
+	/// Each segment uses the explicit JSON name ([JsonPropertyName]) if set;
+	/// otherwise the CLR name converted by the <paramref name="namingPolicy"/>.
+	/// </remarks>
+	/// <param name="namingPolicy">Naming policy applied to properties without an explicit JSON name</param>
+	/// <returns></returns>
+	public string GetJsonPointerPath(JsonNamingPolicy? namingPolicy = null)
+	{
+		string leaf = EscapeJsonPointerSegment(ResolveJsonName(_propertyName, _propertyJsonName, namingPolicy));
+
+		if (_parentSegments is null)
+		{
+			return leaf;
+		}
+
+		var sb = new StringBuilder();
+
+		for (PropertyPathSegment? segment = _parentSegments; segment is not null; segment = segment.Next)
+		{
+			sb.Append(EscapeJsonPointerSegment(ResolveJsonName(segment.Name, segment.JsonName, namingPolicy)));
+			sb.Append('/');
+		}
+
+		return sb.Append(leaf).ToString();
+	}
+
+	private static string ResolveJsonName(string name, string? jsonName, JsonNamingPolicy? namingPolicy)
+	{
+		return jsonName ?? namingPolicy?.ConvertName(name) ?? name;
+	}
+
+	private static string EscapeJsonPointerSegment(string segment)
+	{
+		if (segment.IndexOf('~') == -1 && segment.IndexOf('/') == -1)
+		{
+			return segment;
+		}
+
+		return segment.Replace("~", "~0").Replace("/", "~1");
 	}
 
 	/// <summary>
@@ -185,7 +266,16 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 		string parentPropertyName
 	)
 	{
+		return ((IInternalPropertyValidationResult)this).AsNestedPropertyValidationResult(parentPropertyName, null);
+	}
+
+	PropertyValidationResult IInternalPropertyValidationResult.AsNestedPropertyValidationResult(
+		string parentPropertyName,
+		string? parentPropertyJsonName
+	)
+	{
 		PropertyPath = $"{parentPropertyName}/{PropertyPath}";
+		_parentSegments = new PropertyPathSegment(parentPropertyName, parentPropertyJsonName, _parentSegments);
 		return this;
 	}
 }

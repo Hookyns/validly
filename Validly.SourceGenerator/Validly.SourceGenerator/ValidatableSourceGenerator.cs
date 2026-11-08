@@ -185,11 +185,15 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			+ Environment.NewLine
 			+ (properties.Object.Namespace is null ? string.Empty : "}");
 
-		// > Xxx.Validator.g.cs | Xxx{T1,T2}.Validator.g.cs
+		// Namespace is part of the name; objects with the same name may live in different namespaces
+		// > Ns.Xxx.Validator.g.cs | Ns.Xxx{T1,T2}.Validator.g.cs
 		string hintName =
-			typeParameters.Length == 0
-				? properties.Object.Name
-				: $"{properties.Object.Name}{{{string.Join(",", typeParameters)}}}";
+			(properties.Object.Namespace is null ? string.Empty : properties.Object.Namespace + ".")
+			+ (
+				typeParameters.Length == 0
+					? properties.Object.Name
+					: $"{properties.Object.Name}{{{string.Join(",", typeParameters)}}}"
+			);
 
 		context.AddSource($"{hintName}.Validator.g.cs", SourceText.From(sourceText, Encoding.UTF8));
 	}
@@ -448,15 +452,15 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 		// BeforeValidate hook
 		validateMethodFilePart.AppendLine(
-			CreateBeforeOrAfterValidateHook(properties.Object.BeforeValidateMethod).Indent(2)
+			CreateBeforeOrAfterValidateHook(properties.Object.BeforeValidateMethod, isAsync).Indent(2)
 		);
 
 		// Add INVOCATIONS
-		validateMethodFilePart.AppendLine(invocationBuilder.Build().Indent(2));
+		validateMethodFilePart.AppendLine(invocationBuilder.Build(isAsync).Indent(2));
 
 		// AfterValidate hook
 		validateMethodFilePart.AppendLine(
-			CreateBeforeOrAfterValidateHook(properties.Object.AfterValidateMethod).Indent(2)
+			CreateBeforeOrAfterValidateHook(properties.Object.AfterValidateMethod, isAsync).Indent(2)
 		);
 
 		validateMethodFilePart.AppendLine(
@@ -475,11 +479,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			""".Indent()
 		);
 
-		validateMethodFilePart.AppendLine(
-			isAsync
-				? $"\treturn ({Consts.ValidationResultGlobalRef})result;"
-				: $"\treturn new ValueTask<{Consts.ValidationResultGlobalRef}>(({Consts.ValidationResultGlobalRef})result);"
-		);
+		validateMethodFilePart.AppendLine($"\t{ReturnStatement.CreateForResult(isAsync)}");
 
 		validateMethodFilePart.AppendLine("}");
 
@@ -604,7 +604,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		return validateMethodFilePart;
 	}
 
-	private static string CreateBeforeOrAfterValidateHook(MethodProperties? method)
+	private static string CreateBeforeOrAfterValidateHook(MethodProperties? method, bool isAsync)
 	{
 		if (method is null)
 		{
@@ -639,7 +639,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 					// Call {method.MethodName} hook
 					var resultOf{method.MethodName} = await {method.MethodName}({arguments});
-					if (resultOf{method.MethodName} is not null) return resultOf{method.MethodName};
+					if (resultOf{method.MethodName} is not null) {ReturnStatement.Create($"resultOf{method.MethodName}", isAsync)}
 					""";
 			}
 
@@ -647,7 +647,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 				// Call {method.MethodName} hook
 				var resultOf{method.MethodName} = {method.MethodName}({arguments});
-				if (resultOf{method.MethodName} is not null) return new ValueTask<{Consts.ValidationResultGlobalRef}>(resultOf{method.MethodName});
+				if (resultOf{method.MethodName} is not null) {ReturnStatement.Create($"resultOf{method.MethodName}", isAsync)}
 				""";
 		}
 
@@ -713,18 +713,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		// Generate RULE
 		rulesClassBuilder.AddRuleForProperty(validatableProperty, attributesWithValidators);
 
-		bool anyAsync =
-			customValidationInterfaceBuilder.Calls.AnyAsync()
-			|| (propertiesObject.BeforeValidateMethod?.ReturnTypeType & ReturnTypeType.Awaitable) != 0
-			|| (propertiesObject.AfterValidateMethod?.ReturnTypeType & ReturnTypeType.Awaitable) != 0;
-
-		// Generate INVOCATION
-		invocationBuilder.AddInvocationForProperty(
-			validatableProperty,
-			attributesWithValidators,
-			propertyCalls,
-			anyAsync
-		);
+		// Generate INVOCATION; rendered later, once it is known whether the generated method is async
+		invocationBuilder.AddInvocationForProperty(validatableProperty, attributesWithValidators, propertyCalls);
 	}
 
 	private static void AddAutoValidators(

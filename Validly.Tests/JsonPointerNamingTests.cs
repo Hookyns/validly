@@ -45,6 +45,13 @@ partial class JsonNamedNestedObject
 	public required string ExplicitChild { get; init; }
 }
 
+[Validatable]
+partial class JsonNamedDeepRootObject
+{
+	[JsonPropertyName("deep_root")]
+	public required JsonNamedRootObject Root { get; init; }
+}
+
 public class JsonPointerNamingTests
 {
 	private static readonly JsonNamedObject InvalidObject = new()
@@ -137,6 +144,34 @@ public class JsonPointerNamingTests
 	}
 
 	[Fact]
+	public async Task DeeplyNestedProperties_EachSegmentIsResolved()
+	{
+		var deepRoot = new JsonNamedDeepRootObject
+		{
+			Root = new()
+			{
+				Parent = new() { ChildProp = "abc", ExplicitChild = "abc" },
+				OtherParent = new() { ChildProp = "abc", ExplicitChild = "abc" },
+			},
+		};
+
+		using var result = await deepRoot.ValidateAsync();
+
+		var pointers = GetPointers(result, PropertyNamingPolicy.CamelCase);
+
+		Assert.Equal(4, pointers.Count);
+		Assert.Contains("#/deep_root/parent_json/childProp", pointers.Keys);
+		Assert.Contains("#/deep_root/parent_json/explicit_child", pointers.Keys);
+		Assert.Contains("#/deep_root/otherParent/childProp", pointers.Keys);
+		Assert.Contains("#/deep_root/otherParent/explicit_child", pointers.Keys);
+
+		Assert.Contains(
+			$"{nameof(JsonNamedDeepRootObject.Root)}/{nameof(JsonNamedRootObject.Parent)}/{nameof(JsonNamedNestedObject.ChildProp)}",
+			result.Properties.Select(x => x.PropertyPath)
+		);
+	}
+
+	[Fact]
 	public async Task ProblemDetailsJson_IsValidJsonWithJsonPointers()
 	{
 		using var result = await InvalidObject.ValidateAsync();
@@ -177,5 +212,30 @@ public class ProblemDetailsJsonEscapingTests
 		using var document = JsonDocument.Parse(json);
 		string? pointer = document.RootElement.GetProperty("errors")[0].GetProperty("pointer").GetString();
 		Assert.Equal("#/bell\u0007form\u000Cfeed\u0001", pointer);
+	}
+}
+
+[Validatable]
+partial class LongMessageObject
+{
+	[Validly.Validators.CustomValidation]
+	public string? Value { get; set; }
+
+	public ValidationMessage? ValidateValue() => new(Value!, "Long.Message");
+}
+
+public class ProblemDetailsJsonLongStringEscapingTests
+{
+	[Theory]
+	[InlineData("A long validation message without anything special in it, at all.")]
+	[InlineData("A long validation message with a \"quote\" placed after the first vector.")]
+	[InlineData("A long validation message with a backslash \\ placed after the first vector.")]
+	[InlineData("A long validation message with a control character \u0001 after the first vector.")]
+	public void LongMessages_AreEscaped(string message)
+	{
+		using var result = new LongMessageObject { Value = message }.Validate();
+
+		using var document = JsonDocument.Parse(result.GetProblemDetailsJson());
+		Assert.Equal(message, document.RootElement.GetProperty("errors")[0].GetProperty("detail").GetString());
 	}
 }

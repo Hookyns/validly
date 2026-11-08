@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Validly.Extensions.Validators.Strings;
+using Validly.Naming;
 
 namespace Validly.Tests;
 
@@ -54,7 +55,7 @@ public class JsonPointerNamingTests
 		Weird = "abc",
 	};
 
-	private static Dictionary<string, string?> GetPointers(ValidationResult result, JsonNamingPolicy? namingPolicy)
+	private static Dictionary<string, string?> GetPointers(ValidationResult result, PropertyNamingPolicy? namingPolicy)
 	{
 		return result
 			.GetProblemDetails(namingPolicy)
@@ -79,7 +80,7 @@ public class JsonPointerNamingTests
 	{
 		using var result = await InvalidObject.ValidateAsync();
 
-		var pointers = GetPointers(result, JsonNamingPolicy.CamelCase);
+		var pointers = GetPointers(result, PropertyNamingPolicy.CamelCase);
 
 		Assert.Equal(4, pointers.Count);
 		Assert.Equal(nameof(JsonNamedObject.UserName), pointers["#/username"]);
@@ -92,7 +93,7 @@ public class JsonPointerNamingTests
 	{
 		using var result = await InvalidObject.ValidateAsync();
 
-		var pointers = GetPointers(result, JsonNamingPolicy.SnakeCaseLower);
+		var pointers = GetPointers(result, PropertyNamingPolicy.SnakeCaseLower);
 
 		Assert.Contains("#/username", pointers.Keys);
 		Assert.Contains("#/first_name", pointers.Keys);
@@ -104,7 +105,7 @@ public class JsonPointerNamingTests
 	{
 		using var result = await InvalidObject.ValidateAsync();
 
-		var pointers = GetPointers(result, JsonNamingPolicy.CamelCase);
+		var pointers = GetPointers(result, PropertyNamingPolicy.CamelCase);
 
 		Assert.Equal(nameof(JsonNamedObject.Weird), pointers["#/weird~1~0name\""]);
 	}
@@ -120,7 +121,7 @@ public class JsonPointerNamingTests
 
 		using var result = await root.ValidateAsync();
 
-		var pointers = GetPointers(result, JsonNamingPolicy.CamelCase);
+		var pointers = GetPointers(result, PropertyNamingPolicy.CamelCase);
 
 		Assert.Equal(4, pointers.Count);
 		Assert.Contains("#/parent_json/childProp", pointers.Keys);
@@ -140,7 +141,7 @@ public class JsonPointerNamingTests
 	{
 		using var result = await InvalidObject.ValidateAsync();
 
-		using var document = JsonDocument.Parse(result.GetProblemDetailsJson(JsonNamingPolicy.CamelCase));
+		using var document = JsonDocument.Parse(result.GetProblemDetailsJson(PropertyNamingPolicy.CamelCase));
 
 		var errors = document
 			.RootElement.GetProperty("errors")
@@ -152,5 +153,29 @@ public class JsonPointerNamingTests
 		Assert.Equal(nameof(JsonNamedObject.FirstName), errors["#/firstName"]);
 		Assert.Equal("Last name", errors["#/lastName"]);
 		Assert.Equal(nameof(JsonNamedObject.Weird), errors["#/weird~1~0name\""]);
+	}
+}
+
+[Validatable]
+partial class ControlCharacterNamedObject
+{
+	[MinLength(5)]
+	[JsonPropertyName("bell\u0007form\u000Cfeed\u0001")]
+	public required string Value { get; init; }
+}
+
+public class ProblemDetailsJsonEscapingTests
+{
+	[Fact]
+	public void ProblemDetailsJson_EscapesAllControlCharacters()
+	{
+		using var result = new ControlCharacterNamedObject { Value = "abc" }.Validate();
+
+		string json = result.GetProblemDetailsJson();
+
+		// Must be valid JSON; System.Text.Json rejects unescaped control characters
+		using var document = JsonDocument.Parse(json);
+		string? pointer = document.RootElement.GetProperty("errors")[0].GetProperty("pointer").GetString();
+		Assert.Equal("#/bell\u0007form\u000Cfeed\u0001", pointer);
 	}
 }

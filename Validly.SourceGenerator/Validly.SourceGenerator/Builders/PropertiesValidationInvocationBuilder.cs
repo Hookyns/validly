@@ -1,6 +1,8 @@
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
+using Validly.Naming;
 using Validly.SourceGenerator.Dtos;
+using Validly.SourceGenerator.Utils;
 using Validly.SourceGenerator.Utils.Mapping;
 
 namespace Validly.SourceGenerator.Builders;
@@ -12,6 +14,7 @@ internal class PropertiesValidationInvocationBuilder
 	private readonly string _ruleClassName;
 	private readonly DependenciesTracker _dependenciesTracker;
 	private readonly bool _exitEarly;
+	private readonly ValidlyNamingPolicy _namingPolicy;
 
 	private readonly List<string> _invocations = new();
 
@@ -23,12 +26,14 @@ internal class PropertiesValidationInvocationBuilder
 	public PropertiesValidationInvocationBuilder(
 		string ruleClassName,
 		DependenciesTracker dependenciesTracker,
-		bool exitEarly
+		bool exitEarly,
+		ValidlyNamingPolicy namingPolicy
 	)
 	{
 		_ruleClassName = ruleClassName;
 		_dependenciesTracker = dependenciesTracker;
 		_exitEarly = exitEarly;
+		_namingPolicy = namingPolicy;
 	}
 
 	public void AddInvocationForProperty(
@@ -77,11 +82,14 @@ internal class PropertiesValidationInvocationBuilder
 				? propertyNameLiteral
 				: $"{propertyNameLiteral}, {SymbolDisplay.FormatLiteral(properties.DisplayName, true)}";
 
-		var initPropertyArgs = properties.JsonName is null
-			? propertyNameAndDisplayNameArgs
+		// The JSON name is resolved at compile time whenever possible; null means the runtime has to do it
+		string? jsonName = JsonNameResolver.Resolve(properties, _namingPolicy);
+
+		var initPropertyArgs =
+			jsonName is null ? propertyNameAndDisplayNameArgs
 			: properties.PropertyName == properties.DisplayName
-				? $"{propertyNameLiteral}, null, {SymbolDisplay.FormatLiteral(properties.JsonName, true)}"
-				: $"{propertyNameAndDisplayNameArgs}, {SymbolDisplay.FormatLiteral(properties.JsonName, true)}";
+				? $"{propertyNameLiteral}, null, {SymbolDisplay.FormatLiteral(jsonName, true)}"
+			: $"{propertyNameAndDisplayNameArgs}, {SymbolDisplay.FormatLiteral(jsonName, true)}";
 
 		var sb = new StringBuilder();
 

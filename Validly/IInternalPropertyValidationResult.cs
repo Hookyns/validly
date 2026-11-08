@@ -20,5 +20,8 @@ public interface IInternalPropertyValidationResult
 	/// <param name="parentPropertyName"></param>
 	/// <param name="parentPropertyJsonName">Explicit JSON name of the parent property (from [JsonPropertyName])</param>
 	/// <returns></returns>
-	PropertyValidationResult AsNestedPropertyValidationResult(string parentPropertyName, string? parentPropertyJsonName);
+	PropertyValidationResult AsNestedPropertyValidationResult(
+		string parentPropertyName,
+		string? parentPropertyJsonName
+	);
 }

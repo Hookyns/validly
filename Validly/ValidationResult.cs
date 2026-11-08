@@ -1,8 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using Validly.Details;
+using Validly.Naming;
 using Validly.Utils;
 
 namespace Validly;
@@ -94,7 +93,7 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 	/// Naming policy used for the <see cref="ValidationErrorDetail.Pointer"/> segments of properties without an explicit JSON name ([JsonPropertyName]).
 	/// </param>
 	/// <returns></returns>
-	public ValidationResultDetails GetProblemDetails(JsonNamingPolicy? namingPolicy)
+	public ValidationResultDetails GetProblemDetails(PropertyNamingPolicy? namingPolicy)
 	{
 		return new ValidationResultDetails
 		{
@@ -136,7 +135,7 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 	/// Naming policy used for the "pointer" segments of properties without an explicit JSON name ([JsonPropertyName]).
 	/// </param>
 	/// <returns></returns>
-	public string GetProblemDetailsJson(JsonNamingPolicy? namingPolicy)
+	public string GetProblemDetailsJson(PropertyNamingPolicy? namingPolicy)
 	{
 		// Create StringBuilder with estimated size
 		var sb = new StringBuilder(180 + 200 * PropertiesResultCollection.Count + 200 * GlobalMessages.Count);
@@ -148,8 +147,8 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 			sb.AppendLine(
 				$$"""
 				    {
-				      "detail": "{{JsonEscape(error.Message)}}",
-				      "resourceKey": "{{JsonEscape(error.ResourceKey)}}",
+				      "detail": "{{JsonEscaper.Escape(error.Message)}}",
+				      "resourceKey": "{{JsonEscaper.Escape(error.ResourceKey)}}",
 				      "args": [{{error.ArgsJson}}],
 				      "pointer": "#"
 				    },
@@ -166,8 +165,8 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 				continue;
 			}
 
-			string pointer = JsonEscape(prop.GetJsonPointerPath(namingPolicy));
-			string fieldName = JsonEscape(prop.PropertyDisplayName);
+			string pointer = JsonEscaper.Escape(prop.GetJsonPointerPath(namingPolicy));
+			string fieldName = JsonEscaper.Escape(prop.PropertyDisplayName);
 
 			for (int messageIndex = 0; messageIndex < prop.Messages.Count; messageIndex++)
 			{
@@ -176,8 +175,8 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 				sb.AppendLine(
 					$$"""
 					    {
-					      "detail": "{{JsonEscape(error.Message)}}",
-					      "resourceKey": "{{JsonEscape(error.ResourceKey)}}",
+					      "detail": "{{JsonEscaper.Escape(error.Message)}}",
+					      "resourceKey": "{{JsonEscaper.Escape(error.ResourceKey)}}",
 					      "args": [{{error.ArgsJson}}],
 					      "pointer": "#/{{pointer}}",
 					      "fieldName": "{{fieldName}}"
@@ -197,16 +196,6 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 			  ]
 			}
 			""";
-	}
-
-	/// <summary>
-	/// Escape the value so it can be placed inside a JSON string literal
-	/// </summary>
-	private static string JsonEscape(string? value)
-	{
-		return string.IsNullOrEmpty(value)
-			? string.Empty
-			: JsonEncodedText.Encode(value!, JavaScriptEncoder.UnsafeRelaxedJsonEscaping).ToString();
 	}
 
 	/// <inheritdoc />

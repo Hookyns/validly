@@ -1,9 +1,9 @@
 using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Validly.Naming;
 
 namespace Validly.Extensions.AspNetCore;
 
@@ -17,15 +17,15 @@ public sealed class ValidlyValidationFilter : IEndpointFilter
 	/// <summary>
 	/// Naming policy configured for the HTTP JSON serialization; used for the error pointers
 	/// </summary>
-	private readonly JsonNamingPolicy? _namingPolicy;
+	private readonly PropertyNamingPolicy? _namingPolicy;
 
 	/// <param name="serviceProvider"></param>
 	public ValidlyValidationFilter(IServiceProvider serviceProvider)
 	{
 		_serviceProvider = serviceProvider;
-		_namingPolicy = serviceProvider
-			.GetService<IOptions<JsonOptions>>()
-			?.Value.SerializerOptions.PropertyNamingPolicy;
+		_namingPolicy = JsonNamingPolicyMapper.Map(
+			serviceProvider.GetService<IOptions<JsonOptions>>()?.Value.SerializerOptions.PropertyNamingPolicy
+		);
 	}
 
 	/// <inheritdoc />

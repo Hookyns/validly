@@ -38,78 +38,29 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		) properties
 	)
 	{
-		var methods = properties
-			.Object.Methods.GroupBy(x => x.MethodName)
-			.ToDictionary(x => x.Key, group => group.First());
+		var level = AnalyzeLevel(properties.Object, properties.Config, properties.Validators);
 
-		// Name of the class with RULEs
-		string rulesClassName = $"{properties.Object.Name}Rules";
+		// Shape of the validation of the nearest validatable ancestor
+		HierarchyFlags? baseFlags = properties.Object.BaseObject is null
+			? null
+			: GetHierarchyFlags(properties.Object.BaseObject, properties.Config, properties.Validators);
 
-		// Generic objects; type parameters have to be repeated on the generated partial declaration
-		// > <T1, T2>
-		var typeParameters = properties.Object.TypeParameters.GetArray() ?? Array.Empty<string>();
-		string typeParameterList = typeParameters.Length == 0 ? string.Empty : $"<{string.Join(", ", typeParameters)}>";
-
-		// Generic too, so it does not collide with the interface of a non-generic object with the same name
-		string customValidatorInterfaceName = $"I{properties.Object.Name}CustomValidation{typeParameterList}";
-
-		var dependencies = new DependenciesTracker();
-		AppendDependenciesOfBeforeAndAfterMethods(properties.Object, dependencies);
-
-		// Builders
-		var rulesClassBuilder = new RulesClassBuilder(rulesClassName);
-		var customValidationsInterfaceBuilder = new CustomValidationInterfaceBuilder(
-			customValidatorInterfaceName,
-			dependencies
-		).WithMethods(methods);
-		var invocationBuilder = new PropertiesValidationInvocationBuilder(
-			rulesClassName,
-			dependencies,
-			properties.Object.ExitEarly ?? properties.Config.ExitEarly
+		// Service provider and async-ness are given by the whole hierarchy; the public methods must match the base ones
+		var flags = new HierarchyFlags(
+			level.Dependencies.HasDependencies || (baseFlags?.RequiresServiceProvider ?? false),
+			level.IsAsync || (baseFlags?.IsAsync ?? false),
+			!level.IsInherentlyAsync && (baseFlags?.HasValidateMethod ?? true)
 		);
 
-		// Generate stuff for each property
-		foreach (PropertyProperties property in properties.Object.Properties)
-		{
-			var attributes = ToAttributeList(properties, property);
-
-			// Skip properties without validators
-			if (attributes.Count == 0)
-			{
-				continue;
-			}
-
-			ProcessValidatableProperty(
-				property,
-				properties.Object,
-				properties.Validators,
-				attributes,
-				rulesClassBuilder,
-				customValidationsInterfaceBuilder,
-				invocationBuilder
-			);
-		}
-
-		bool isAsync =
-			customValidationsInterfaceBuilder.Calls.AnyAsync()
-			|| invocationBuilder.Calls.AnyAsync()
-			|| (
-				(properties.Object.BeforeValidateMethod?.ReturnTypeType ?? ReturnTypeType.None)
-				& ReturnTypeType.Awaitable
-			) != 0
-			|| (
-				(properties.Object.AfterValidateMethod?.ReturnTypeType ?? ReturnTypeType.None)
-				& ReturnTypeType.Awaitable
-			) != 0
-			// TODO: Can we handle this differently? How should we check if that type is async validator? For now, we force async behavior if there is any property of Validatable type
-			|| properties.Object.Properties.Any(prop => prop.PropertyIsOfValidatableType)
-			// TODO: Like above, we force async behavior if the object inherits from Validatable object
-			|| properties.Object.InheritsValidatableObject;
+		var rulesClassBuilder = level.RulesClassBuilder;
+		var customValidationsInterfaceBuilder = level.CustomValidationsInterfaceBuilder;
+		var customValidatorInterfaceName = level.CustomValidatorInterfaceName;
+		var typeParameters = level.TypeParameters;
 
 		// Generate the validator part for the original object
 		// > public partial class Xxx : IValidatable, IInternalValidationInvoker { ... }
 		var validatorClassBuilder = DeclarationBuilder
-			.CreateClassOrRecord(properties.Object.ClassOrRecordKeyword, properties.Object.Name + typeParameterList)
+			.CreateClassOrRecord(properties.Object.ClassOrRecordKeyword, properties.Object.Name + level.TypeParameterList)
 			.SetAccessModifier(properties.Object.Accessibility)
 			.AddUsings(properties.Object.Usings.GetArray() ?? Array.Empty<string>())
 			// .SetNamespace(properties.Object.Namespace)
@@ -117,18 +68,9 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			.AddInterfaces(Consts.IValidatableGlobalRef)
 			.AddInterfaces(Consts.InternalValidationInvokerGlobalRef)
 			.AddMember(CreateImplementationOfInternalValidationInvoker())
-			.AddMember(CreateIValidatableValidateMethod(dependencies))
-			.AddMemberIf(CreateSyncValidateMethod(properties, dependencies, isAsync), !isAsync)
-			.AddMember(
-				CreateValidateMethod(
-					properties,
-					dependencies,
-					customValidationsInterfaceBuilder.HasAnyMethod(),
-					customValidatorInterfaceName,
-					invocationBuilder,
-					isAsync
-				)
-			);
+			.AddMember(CreateIValidatableValidateMethod(flags))
+			.AddMember(CreatePublicValidateMethods(properties.Object, flags, baseFlags))
+			.AddMember(CreateCoreValidateMethod(properties, level, flags, baseFlags));
 
 		// If custom validation is used, add generated interface to the validator class
 		if (customValidationsInterfaceBuilder.HasAnyMethod())
@@ -156,11 +98,15 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			+ Environment.NewLine
 			+ (properties.Object.Namespace is null ? string.Empty : "}");
 
-		// > Xxx.Validator.g.cs | Xxx{T1,T2}.Validator.g.cs
+		// Namespace is part of the name; objects with the same name may live in different namespaces
+		// > Ns.Xxx.Validator.g.cs | Ns.Xxx{T1,T2}.Validator.g.cs
 		string hintName =
-			typeParameters.Length == 0
-				? properties.Object.Name
-				: $"{properties.Object.Name}{{{string.Join(",", typeParameters)}}}";
+			(properties.Object.Namespace is null ? string.Empty : properties.Object.Namespace + ".")
+			+ (
+				typeParameters.Length == 0
+					? properties.Object.Name
+					: $"{properties.Object.Name}{{{string.Join(",", typeParameters)}}}"
+			);
 
 		context.AddSource($"{hintName}.Validator.g.cs", SourceText.From(sourceText, Encoding.UTF8));
 	}
@@ -170,7 +116,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		DependenciesTracker dependencies
 	)
 	{
-		if (objectProperties.BeforeValidateMethod is not null)
+		// Overriding hooks are called by the base object, not by this level
+		if (objectProperties.BeforeValidateMethod is { IsCalledByBase: false })
 		{
 			foreach (var dependency in objectProperties.BeforeValidateMethod.Dependencies)
 			{
@@ -178,7 +125,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			}
 		}
 
-		if (objectProperties.AfterValidateMethod is not null)
+		if (objectProperties.AfterValidateMethod is { IsCalledByBase: false })
 		{
 			foreach (var dependency in objectProperties.AfterValidateMethod.Dependencies)
 			{
@@ -210,61 +157,202 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		return attributes;
 	}
 
-	private static SourceTextSectionBuilder CreateValidateMethod(
+	/// <summary>
+	/// Shape of the generated validation of an object, given by its whole hierarchy
+	/// </summary>
+	/// <param name="RequiresServiceProvider">Public validation methods require IServiceProvider</param>
+	/// <param name="IsAsync">The core validation method is asynchronous (it awaits)</param>
+	/// <param name="HasValidateMethod">
+	/// Synchronous Validate() method is generated; it is, unless there are asynchronous validators or hooks.
+	/// Nested objects make the validation asynchronous, but it usually completes synchronously.
+	/// </param>
+	private readonly record struct HierarchyFlags(bool RequiresServiceProvider, bool IsAsync, bool HasValidateMethod);
+
+	/// <summary>
+	/// Analyzed level (one class of a hierarchy) of a validatable object
+	/// </summary>
+	private sealed class LevelAnalysis
+	{
+		public required string[] TypeParameters { get; init; }
+		public required string TypeParameterList { get; init; }
+		public required string CustomValidatorInterfaceName { get; init; }
+		public required DependenciesTracker Dependencies { get; init; }
+		public required RulesClassBuilder RulesClassBuilder { get; init; }
+		public required CustomValidationInterfaceBuilder CustomValidationsInterfaceBuilder { get; init; }
+		public required PropertiesValidationInvocationBuilder InvocationBuilder { get; init; }
+
+		/// <summary>
+		/// Validation of this level is asynchronous (its base is not taken into account)
+		/// </summary>
+		public required bool IsAsync { get; init; }
+
+		/// <summary>
+		/// This level has asynchronous validators or hooks; nested objects are not taken into account
+		/// </summary>
+		public required bool IsInherentlyAsync { get; init; }
+	}
+
+	private static LevelAnalysis AnalyzeLevel(
+		ObjectProperties obj,
+		ValidlyConfiguration config,
+		EquatableArray<ValidatorProperties> validators
+	)
+	{
+		var methods = obj.Methods.GroupBy(x => x.MethodName).ToDictionary(x => x.Key, group => group.First());
+
+		// Name of the class with RULEs
+		string rulesClassName = $"{obj.Name}Rules";
+
+		// Generic objects; type parameters have to be repeated on the generated partial declaration
+		// > <T1, T2>
+		var typeParameters = obj.TypeParameters.GetArray() ?? Array.Empty<string>();
+		string typeParameterList = typeParameters.Length == 0 ? string.Empty : $"<{string.Join(", ", typeParameters)}>";
+
+		// Generic too, so it does not collide with the interface of a non-generic object with the same name
+		string customValidatorInterfaceName = $"I{obj.Name}CustomValidation{typeParameterList}";
+
+		var dependencies = new DependenciesTracker();
+		AppendDependenciesOfBeforeAndAfterMethods(obj, dependencies);
+
+		// Builders
+		var rulesClassBuilder = new RulesClassBuilder(rulesClassName);
+		var customValidationsInterfaceBuilder = new CustomValidationInterfaceBuilder(
+			customValidatorInterfaceName,
+			dependencies
+		).WithMethods(methods);
+		var invocationBuilder = new PropertiesValidationInvocationBuilder(
+			rulesClassName,
+			dependencies,
+			obj.ExitEarly ?? config.ExitEarly
+		);
+
+		// Generate stuff for each property
+		foreach (PropertyProperties property in obj.Properties)
+		{
+			var attributes = ToAttributeList((obj, config, validators), property);
+
+			// Skip properties without validators
+			if (attributes.Count == 0)
+			{
+				continue;
+			}
+
+			ProcessValidatableProperty(
+				property,
+				obj,
+				validators,
+				attributes,
+				rulesClassBuilder,
+				customValidationsInterfaceBuilder,
+				invocationBuilder
+			);
+		}
+
+		// Asynchronous validators or hooks of this level
+		bool isInherentlyAsync =
+			customValidationsInterfaceBuilder.Calls.AnyAsync()
+			|| invocationBuilder.Calls.AnyAsync()
+			|| IsCalledAwaitableHook(obj.BeforeValidateMethod)
+			|| IsCalledAwaitableHook(obj.AfterValidateMethod);
+
+		bool isAsync =
+			isInherentlyAsync
+			// TODO: Can we handle this differently? How should we check if that type is async validator? For now, we force async behavior if there is any property of Validatable type
+			|| obj.Properties.Any(prop => prop.PropertyIsOfValidatableType);
+
+		return new LevelAnalysis
+		{
+			TypeParameters = typeParameters,
+			TypeParameterList = typeParameterList,
+			CustomValidatorInterfaceName = customValidatorInterfaceName,
+			Dependencies = dependencies,
+			RulesClassBuilder = rulesClassBuilder,
+			CustomValidationsInterfaceBuilder = customValidationsInterfaceBuilder,
+			InvocationBuilder = invocationBuilder,
+			IsAsync = isAsync,
+			IsInherentlyAsync = isInherentlyAsync,
+		};
+	}
+
+	private static bool IsCalledAwaitableHook(MethodProperties? hook)
+	{
+		return hook is not null && !hook.IsCalledByBase && (hook.ReturnTypeType & ReturnTypeType.Awaitable) != 0;
+	}
+
+	/// <summary>
+	/// Resolve the shape of the validation of the (nearest validatable) ancestor
+	/// </summary>
+	private static HierarchyFlags GetHierarchyFlags(
+		BaseObjectProperties baseObject,
+		ValidlyConfiguration config,
+		EquatableArray<ValidatorProperties> validators
+	)
+	{
+		// Referenced assembly; read from its members
+		if (!baseObject.IsFromSource || baseObject.Object is null)
+		{
+			return new HierarchyFlags(
+				baseObject.RequiresServiceProvider,
+				baseObject.IsAsync,
+				baseObject.HasValidateMethod
+			);
+		}
+
+		// Same compilation; resolved the same way as the generated code of the ancestor is
+		var level = AnalyzeLevel(baseObject.Object, config, validators);
+		var parentFlags = baseObject.Object.BaseObject is null
+			? default
+			: GetHierarchyFlags(baseObject.Object.BaseObject, config, validators);
+
+		return new HierarchyFlags(
+			level.Dependencies.HasDependencies || parentFlags.RequiresServiceProvider,
+			level.IsAsync || parentFlags.IsAsync,
+			!level.IsInherentlyAsync && (baseObject.Object.BaseObject is null || parentFlags.HasValidateMethod)
+		);
+	}
+
+	/// <summary>
+	/// Generate the core validation method; it validates the object in the given context.
+	/// Derived objects call the core method of their base, so the validation context is shared.
+	/// </summary>
+	private static SourceTextSectionBuilder CreateCoreValidateMethod(
 		(
 			ObjectProperties Object,
 			ValidlyConfiguration Config,
 			EquatableArray<ValidatorProperties> Validators
 		) properties,
-		DependenciesTracker dependencies,
-		bool hasCustomValidation,
-		string customValidatorInterfaceName,
-		PropertiesValidationInvocationBuilder invocationBuilder,
-		bool isAsync
+		LevelAnalysis level,
+		HierarchyFlags flags,
+		HierarchyFlags? baseFlags
 	)
 	{
-		var asyncKeyword = isAsync ? "async" : string.Empty;
-		var overrideVirtual =
-			properties.Object.InheritsValidatableObject ? "override"
-			: properties.Object.IsSealed ? ""
-			: "virtual";
-		var serviceProviderParameter = dependencies.HasDependencies
-			? $"{Consts.ServiceProviderGlobalRef} serviceProvider"
-			: string.Empty;
-		var cancellationTokenParameter = dependencies.HasDependencies
-			? ", CancellationToken ct = default"
-			: "CancellationToken ct = default";
-		var serviceProviderDep = dependencies.HasDependencies ? "serviceProvider" : "null";
+		bool isAsync = flags.IsAsync;
+		var baseObject = properties.Object.BaseObject;
+		var asyncKeyword = isAsync ? "async " : string.Empty;
+
+		// Sealed objects cannot be inherited; protected member in a sealed type is a warning
+		var accessModifier = properties.Object.IsSealed ? "private" : "protected";
+
+		// Core method of the base is hidden by the core method of this level
+		var newModifier = baseObject?.HasCoreMethod == true ? "new " : string.Empty;
+		var hasCustomValidation = level.CustomValidationsInterfaceBuilder.HasAnyMethod();
 
 		var validateMethodFilePart = new SourceTextSectionBuilder()
-			// .AppendLine("#if NET7_0_OR_GREATER")
-			// .AppendLine(
-			// 	"[global::System.Runtime.CompilerServices.MethodImpl(global::System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)]"
-			// )
-			// .AppendLine("#endif")
 			.AppendLine(
 				$$"""
 
 				/// <summary>
-				/// Validate the object and get the result with error messages.
+				/// Validates the object within the given validation context. Internal method used by the generated code.
 				/// </summary>
-				/// <returns>Returns disposable ValidationResult.</returns>
-				public {{overrideVirtual}} {{asyncKeyword}} ValueTask<{{Consts.ValidationResultGlobalRef}}> ValidateAsync({{serviceProviderParameter}}{{cancellationTokenParameter}})
+				[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+				{{accessModifier}} {{newModifier}}{{asyncKeyword}}ValueTask<{{Consts.ValidationResultGlobalRef}}> {{Consts.ValidateCoreMethodName}}({{Consts.ValidationContextGlobalRef}} context, {{Consts.ServiceProviderGlobalRef}}? serviceProvider, CancellationToken ct)
 				{
 					{{Consts.InternalValidationResultGlobalRef}}? result = null;
-					var contextSet = (({{Consts.InternalValidationInvokerGlobalRef}})this).GetValidationContext();
-					var context = contextSet == null
-						? {{Consts.ValidationContextGlobalRef}}.Create(this)
-						: contextSet;
-
-					// Ensure disposal of ValidationContext if it was created here
-					using var _ = new {{Consts.ValidationContextDisposerGlobalRef}}(context, contextSet == null);
 
 					try {
 				"""
 			)
-			// .AppendLine("\ttry {")
-			.AppendLineIf($"\t\tvar customValidator = ({customValidatorInterfaceName})this;", hasCustomValidation);
+			.AppendLineIf($"\t\tvar customValidator = ({level.CustomValidatorInterfaceName})this;", hasCustomValidation);
 
 		var nestedValidations = new List<string>();
 		var nestedValidationsDispose = new List<string>();
@@ -276,77 +364,93 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				continue;
 			}
 
+			int nestedIndex = nestedValidationsDispose.Count;
+
+			// Null nested object is not validated; it is the job of the Required validator
 			nestedValidations.Add(
-				$"""
-				context.SetObject(this.{property.PropertyName});
-				(({Consts.InternalValidationInvokerGlobalRef})this.{property.PropertyName}).SetValidationContext(context);
-				#pragma warning disable CS8625
-				var nestedValidationResult{nestedValidationsDispose.Count} = await (({Consts.IValidatableGlobalRef})this.{property.PropertyName}).ValidateAsync({serviceProviderDep}, ct);
-				#pragma warning restore CS8625
-				nestedPropertiesCount += (({Consts.InternalValidationResultGlobalRef})nestedValidationResult{nestedValidationsDispose.Count}).GetPropertiesCount();
+				$$"""
+				{{Consts.ValidationResultGlobalRef}}? nestedValidationResult{{nestedIndex}} = null;
+				if (this.{{property.PropertyName}} is {} nestedObject{{nestedIndex}})
+				{
+					context.SetObject(nestedObject{{nestedIndex}});
+					(({{Consts.InternalValidationInvokerGlobalRef}})nestedObject{{nestedIndex}}).SetValidationContext(context);
+					nestedValidationResult{{nestedIndex}} = await (({{Consts.IValidatableGlobalRef}})nestedObject{{nestedIndex}}).ValidateAsync(serviceProvider!, ct);
+					nestedPropertiesCount += (({{Consts.InternalValidationResultGlobalRef}})nestedValidationResult{{nestedIndex}}).GetPropertiesCount();
+				}
 				"""
 			);
 
 			nestedValidationsDispose.Add(
-				$"""
-				result.CombineNested(nestedValidationResult{nestedValidationsDispose.Count}, "{property.PropertyName}");
-				nestedValidationResult{nestedValidationsDispose.Count}.Dispose();
+				$$"""
+				if (nestedValidationResult{{nestedIndex}} is not null)
+				{
+					result.CombineNested(nestedValidationResult{{nestedIndex}}, "{{property.PropertyName}}");
+					nestedValidationResult{{nestedIndex}}.Dispose();
+				}
 				"""
 			);
 		}
 
-		var hasNestedProperties = nestedValidations.Count != 0 || properties.Object.InheritsValidatableObject;
-		int indentation = 2;
+		var hasNestedProperties = nestedValidations.Count != 0 || baseObject is not null;
 
 		if (hasNestedProperties)
 		{
-			validateMethodFilePart
-			// .AppendLineIf(
-			// 	$"\t\t{Consts.ServiceProviderGlobalRef}? serviceProvider = null;",
-			// 	!dependencies.HasDependencies
-			// )
-			.AppendLine("\t\tvar nestedPropertiesCount = 0;");
+			validateMethodFilePart.AppendLine("\t\tvar nestedPropertiesCount = 0;");
+		}
 
-			if (nestedValidations.Count != 0)
-			{
-				validateMethodFilePart.AppendLine(
-					$"""
+		// BASE object is validated first (in the same context), its results go first
+		if (baseObject is not null && baseFlags is { } baseShape)
+		{
+			string baseCall = baseObject.HasCoreMethod
+				? $"base.{Consts.ValidateCoreMethodName}(context, serviceProvider, ct)"
+				// Generated by an older version of Validly; the context is passed the way it expects
+				: $"base.ValidateAsync({(baseShape.RequiresServiceProvider ? "serviceProvider!, " : string.Empty)}ct)";
 
-					{string.Join(Environment.NewLine, nestedValidations)}
-					context.SetObject(this);
+			string baseResultValue = isAsync
+				? "await baseTask"
+				: "baseTask.IsCompletedSuccessfully ? baseTask.Result : throw new global::System.InvalidOperationException(\"The validation of the base object should be completed synchronously but was not.\")";
 
-					""".Indent(2)
-				);
-			}
+			validateMethodFilePart.AppendLine(
+				$$"""
 
-			if (properties.Object.InheritsValidatableObject)
-			{
-				// Increate indentation because of try-finally block
-				indentation++;
+				// Validate BASE object
+				{{(baseObject.HasCoreMethod ? string.Empty : $"(({Consts.InternalValidationInvokerGlobalRef})this).SetValidationContext(context);")}}
+				var baseTask = {{baseCall}};
+				var baseResult = {{baseResultValue}};
+				nestedPropertiesCount += (({{Consts.InternalValidationResultGlobalRef}})baseResult).GetPropertiesCount();
+				""".Indent(2)
+			);
+		}
 
-				validateMethodFilePart.AppendLine(
-					$$"""
+		if (nestedValidations.Count != 0)
+		{
+			validateMethodFilePart.AppendLine(
+				$"""
 
-					// call BASE class' Validate()
-					(({{Consts.InternalValidationInvokerGlobalRef}})base).SetValidationContext(context);
-					using (var baseResult = await base.ValidateAsync({{(
-						dependencies.HasDependencies ? "serviceProvider, " : string.Empty
-					)}}ct)) {
-						nestedPropertiesCount += (({{Consts.InternalValidationResultGlobalRef}})baseResult).GetPropertiesCount();
-					""".Indent(
-						2
-					)
-				);
-			}
+				{string.Join(Environment.NewLine, nestedValidations)}
+				context.SetObject(this);
+
+				""".Indent(2)
+			);
 		}
 
 		validateMethodFilePart.AppendLine(
 			$"result = ({Consts.InternalValidationResultGlobalRef}){Consts.ExtendableValidationResultGlobalRef}.Create({
 				properties.Object.Properties.Count}{(hasNestedProperties ? " + nestedPropertiesCount" : string.Empty)
-			});".Indent(
-				indentation
-			)
+			});".Indent(2)
 		);
+
+		if (baseObject is not null)
+		{
+			validateMethodFilePart.AppendLine(
+				"""
+
+				// Results of the BASE object go first
+				result.Combine(baseResult);
+				baseResult.Dispose();
+				""".Indent(2)
+			);
+		}
 
 		if (nestedValidations.Count != 0)
 		{
@@ -355,20 +459,6 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 				// Dispose nested validation results
 				{string.Join(Environment.NewLine, nestedValidationsDispose)}
-				""".Indent(indentation)
-			);
-		}
-
-		if (properties.Object.InheritsValidatableObject)
-		{
-			// Decrease indentation because of try-finally block end
-			indentation--;
-
-			validateMethodFilePart.AppendLine(
-				"""
-					result.Combine(baseResult);
-				}
-
 				""".Indent(2)
 			);
 		}
@@ -379,12 +469,12 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			.AppendLine("\t\tvar serviceValidationContext = context;")
 			.AppendLine($"\t\tvar serviceValidationResult = ({Consts.ValidationResultGlobalRef})result;");
 
-		if (dependencies.HasDependencies)
+		if (level.Dependencies.HasDependencies)
 		{
 			validateMethodFilePart.AppendLine("\t\t// Required services");
 
 			// for indentation purposes
-			foreach (var dependency in dependencies.Services)
+			foreach (var dependency in level.Dependencies.Services)
 			{
 				var serviceProviderString = dependency is KeyedDependencyInjectionInfo keyedDependency
 					? $"ServiceProviderHelper.GetRequiredKeyedService<{keyedDependency.Name}>(serviceProvider, {keyedDependency.KeySyntax});"
@@ -394,17 +484,17 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			}
 		}
 
-		// BeforeValidate hook
+		// BeforeValidate hook; an overriding hook is called (virtually) by the base object
 		validateMethodFilePart.AppendLine(
-			CreateBeforeOrAfterValidateHook(properties.Object.BeforeValidateMethod).Indent(2)
+			CreateBeforeOrAfterValidateHook(GetCalledHook(properties.Object.BeforeValidateMethod), isAsync).Indent(2)
 		);
 
 		// Add INVOCATIONS
-		validateMethodFilePart.AppendLine(invocationBuilder.Build().Indent(2));
+		validateMethodFilePart.AppendLine(level.InvocationBuilder.Build(isAsync).Indent(2));
 
 		// AfterValidate hook
 		validateMethodFilePart.AppendLine(
-			CreateBeforeOrAfterValidateHook(properties.Object.AfterValidateMethod).Indent(2)
+			CreateBeforeOrAfterValidateHook(GetCalledHook(properties.Object.AfterValidateMethod), isAsync).Indent(2)
 		);
 
 		validateMethodFilePart.AppendLine(
@@ -423,99 +513,217 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			""".Indent()
 		);
 
-		validateMethodFilePart.AppendLine(
-			isAsync
-				? $"\treturn ({Consts.ValidationResultGlobalRef})result;"
-				: $"\treturn new ValueTask<{Consts.ValidationResultGlobalRef}>(({Consts.ValidationResultGlobalRef})result);"
-		);
+		validateMethodFilePart.AppendLine($"\t{ReturnStatement.CreateForResult(isAsync)}");
 
 		validateMethodFilePart.AppendLine("}");
 
 		return validateMethodFilePart;
 	}
 
+	private static MethodProperties? GetCalledHook(MethodProperties? hook)
+	{
+		return hook is { IsCalledByBase: false } ? hook : null;
+	}
+
 	/// <summary>
-	/// Generate synchronous Validate() method
+	/// Generate public ValidateAsync() and Validate() methods
 	/// </summary>
-	/// <param name="properties"></param>
-	/// <param name="dependencies"></param>
-	/// <param name="isAsync"></param>
-	/// <returns></returns>
-	private static SourceTextSectionBuilder CreateSyncValidateMethod(
-		(
-			ObjectProperties Object,
-			ValidlyConfiguration Config,
-			EquatableArray<ValidatorProperties> Validators
-		) properties,
-		DependenciesTracker dependencies,
-		bool isAsync
+	/// <remarks>
+	/// The methods have to match the methods of the base object; when this object requires IServiceProvider
+	/// and the base does not, the inherited methods without IServiceProvider throw.
+	/// </remarks>
+	private static SourceTextSectionBuilder CreatePublicValidateMethods(
+		ObjectProperties obj,
+		HierarchyFlags flags,
+		HierarchyFlags? baseFlags
 	)
 	{
-		var validateReturnType = isAsync
-			? $"ValueTask<{Consts.ValidationResultGlobalRef}>"
-			: Consts.ValidationResultGlobalRef;
-		var overrideVirtual =
-			properties.Object.InheritsValidatableObject ? "override"
-			: properties.Object.IsSealed ? ""
-			: "virtual";
-		var serviceProviderParameter = dependencies.HasDependencies
-			? $"{Consts.ServiceProviderGlobalRef} serviceProvider"
-			: string.Empty;
-		var serviceProviderDep = dependencies.HasDependencies ? "serviceProvider" : string.Empty;
-		var cancellationTokenDep = dependencies.HasDependencies ? ", default" : "default";
+		var builder = new SourceTextSectionBuilder();
+		var virtualModifier = obj.IsSealed ? string.Empty : "virtual";
+		bool requiresServiceProvider = flags.RequiresServiceProvider;
+		bool serviceProviderMismatch = baseFlags is { } baseShape && baseShape.RequiresServiceProvider != requiresServiceProvider;
 
-		var validateMethodFilePart = new SourceTextSectionBuilder().AppendLine(
+		// ValidateAsync()
+		if (baseFlags is null)
+		{
+			AppendValidateAsyncMethod(builder, virtualModifier, requiresServiceProvider);
+		}
+		else if (!serviceProviderMismatch)
+		{
+			AppendValidateAsyncMethod(builder, "override", requiresServiceProvider);
+		}
+		else
+		{
+			AppendServiceProviderRequiredMethod(builder, obj, isAsync: true);
+			AppendValidateAsyncMethod(builder, virtualModifier, requiresServiceProvider: true);
+		}
+
+		// Validate(); unless the validation is inherently asynchronous; the base has Validate() too then
+		if (flags.HasValidateMethod)
+		{
+			if (baseFlags is null)
+			{
+				AppendValidateMethod(builder, virtualModifier, requiresServiceProvider);
+			}
+			else if (!serviceProviderMismatch)
+			{
+				AppendValidateMethod(builder, "override", requiresServiceProvider);
+			}
+			else
+			{
+				AppendServiceProviderRequiredMethod(builder, obj, isAsync: false);
+				AppendValidateMethod(builder, virtualModifier, requiresServiceProvider: true);
+			}
+		}
+
+		builder.AppendLine(
+			$$"""
+
+			private static async ValueTask<{{Consts.ValidationResultGlobalRef}}> ValidlyDisposeContextWhenCompletedAsync(ValueTask<{{Consts.ValidationResultGlobalRef}}> task, {{Consts.ValidationContextGlobalRef}} context)
+			{
+				try
+				{
+					return await task.ConfigureAwait(false);
+				}
+				finally
+				{
+					context.Dispose();
+				}
+			}
+			"""
+		);
+
+		return builder;
+	}
+
+	private static void AppendValidateAsyncMethod(
+		SourceTextSectionBuilder builder,
+		string modifier,
+		bool requiresServiceProvider
+	)
+	{
+		var serviceProviderParameter = requiresServiceProvider
+			? $"{Consts.ServiceProviderGlobalRef} serviceProvider, "
+			: string.Empty;
+		var serviceProviderArgument = requiresServiceProvider ? "serviceProvider" : "null";
+
+		builder.AppendLine(
 			$$"""
 
 			/// <summary>
 			/// Validate the object and get the result with error messages.
 			/// </summary>
 			/// <returns>Returns disposable ValidationResult.</returns>
-			public {{overrideVirtual}} {{validateReturnType}} Validate({{serviceProviderParameter}})
+			public {{modifier}} ValueTask<{{Consts.ValidationResultGlobalRef}}> ValidateAsync({{serviceProviderParameter}}CancellationToken ct = default)
 			{
-				var task = ValidateAsync({{serviceProviderDep}}{{cancellationTokenDep}});
+				// Context of the parent validation when validated as a part of it
+				var contextSet = (({{Consts.InternalValidationInvokerGlobalRef}})this).GetValidationContext();
+				var context = contextSet ?? {{Consts.ValidationContextGlobalRef}}.Create(this);
+				ValueTask<{{Consts.ValidationResultGlobalRef}}> task;
+
+				try
+				{
+					task = {{Consts.ValidateCoreMethodName}}(context, {{serviceProviderArgument}}, ct);
+				}
+				catch
+				{
+					if (contextSet is null)
+					{
+						context.Dispose();
+					}
+
+					throw;
+				}
+
+				// Context created here has to be disposed when the validation is completed
+				if (contextSet is not null)
+				{
+					return task;
+				}
+
+				if (task.IsCompletedSuccessfully)
+				{
+					context.Dispose();
+					return task;
+				}
+
+				return ValidlyDisposeContextWhenCompletedAsync(task, context);
+			}
+			"""
+		);
+	}
+
+	private static void AppendValidateMethod(SourceTextSectionBuilder builder, string modifier, bool requiresServiceProvider)
+	{
+		var serviceProviderParameter = requiresServiceProvider
+			? $"{Consts.ServiceProviderGlobalRef} serviceProvider"
+			: string.Empty;
+		var serviceProviderArgument = requiresServiceProvider ? "serviceProvider, " : string.Empty;
+
+		builder.AppendLine(
+			$$"""
+
+			/// <summary>
+			/// Validate the object and get the result with error messages.
+			/// </summary>
+			/// <returns>Returns disposable ValidationResult.</returns>
+			public {{modifier}} {{Consts.ValidationResultGlobalRef}} Validate({{serviceProviderParameter}})
+			{
+				var task = ValidateAsync({{serviceProviderArgument}}default);
 
 				if (!task.IsCompletedSuccessfully)
 				{
-					#if NET7_0_OR_GREATER
-					throw new global::System.Diagnostics.UnreachableException("The task should be completed synchronously but was not.");
-					#else
-					throw new global::System.InvalidOperationException("The task should be completed synchronously but was not.");
-					#endif
+					throw new global::System.InvalidOperationException("The validation did not complete synchronously (an asynchronous validator or hook of a nested object or collection item); use ValidateAsync instead.");
 				}
 
 				return task.Result;
 			}
 			"""
 		);
+	}
 
-		return validateMethodFilePart;
+	/// <summary>
+	/// Override of the inherited method without IServiceProvider; this object requires IServiceProvider
+	/// </summary>
+	private static void AppendServiceProviderRequiredMethod(SourceTextSectionBuilder builder, ObjectProperties obj, bool isAsync)
+	{
+		var signature = isAsync
+			? $"ValueTask<{Consts.ValidationResultGlobalRef}> ValidateAsync(CancellationToken ct = default)"
+			: $"{Consts.ValidationResultGlobalRef} Validate()";
+		var replacement = isAsync ? "ValidateAsync(IServiceProvider, CancellationToken)" : "Validate(IServiceProvider)";
+
+		builder.AppendLine(
+			$$"""
+
+			/// <summary>
+			/// Not supported; validation of {{obj.Name}} requires IServiceProvider. Use {{replacement}} instead.
+			/// </summary>
+			/// <exception cref="global::System.InvalidOperationException">Always thrown.</exception>
+			public override {{signature}}
+			{
+				throw new global::System.InvalidOperationException("Validation of {{obj.Name}} requires IServiceProvider; use {{replacement}} instead.");
+			}
+			"""
+		);
 	}
 
 	/// <summary>
 	/// Generate explicit implementation IValidatable.ValidateAsync() method
 	/// </summary>
-	/// <param name="dependencies"></param>
-	/// <returns></returns>
-	private static SourceTextSectionBuilder CreateIValidatableValidateMethod(DependenciesTracker dependencies)
+	private static SourceTextSectionBuilder CreateIValidatableValidateMethod(HierarchyFlags flags)
 	{
-		var serviceProviderParameter = dependencies.HasDependencies
-			? $"{Consts.ServiceProviderGlobalRef} serviceProvider"
-			: $"{Consts.ServiceProviderGlobalRef} _";
-		var serviceProviderDep = dependencies.HasDependencies ? "serviceProvider, " : string.Empty;
+		var serviceProviderArgument = flags.RequiresServiceProvider ? "serviceProvider, " : string.Empty;
 
-		var validateMethodFilePart = new SourceTextSectionBuilder().AppendLine(
+		return new SourceTextSectionBuilder().AppendLine(
 			$$"""
 
 			/// <inheritdoc />
-			async ValueTask<{{Consts.ValidationResultGlobalRef}}> {{Consts.IValidatableGlobalRef}}.ValidateAsync({{serviceProviderParameter}}, CancellationToken ct)
+			ValueTask<{{Consts.ValidationResultGlobalRef}}> {{Consts.IValidatableGlobalRef}}.ValidateAsync({{Consts.ServiceProviderGlobalRef}} serviceProvider, CancellationToken ct)
 			{
-				return await ValidateAsync({{serviceProviderDep}}ct);
+				return ValidateAsync({{serviceProviderArgument}}ct);
 			}
 			"""
 		);
-
-		return validateMethodFilePart;
 	}
 
 	/// <summary>
@@ -527,25 +735,24 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		var validateMethodFilePart = new SourceTextSectionBuilder().AppendLine(
 			$$"""
 
-			private {{Consts.WeakReferenceGlobalRef}}<{{Consts.ValidationContextGlobalRef}}>? _validationContext;
+			/// <summary>
+			/// Context of the parent validation; set just before this object is validated as a part of it
+			/// </summary>
+			private {{Consts.ValidationContextGlobalRef}}? _validationContext;
 
 			/// <inheritdoc />
 			void {{Consts.InternalValidationInvokerGlobalRef}}.SetValidationContext({{Consts.ValidationContextGlobalRef}} validationContext)
 			{
-				this._validationContext = new {{Consts.WeakReferenceGlobalRef}}<{{Consts.ValidationContextGlobalRef}}>(validationContext, false);
+				this._validationContext = validationContext;
 			}
 
 			/// <inheritdoc />
+			/// <remarks>The context is taken; it is cleared, so a later standalone validation creates its own context.</remarks>
 			{{Consts.ValidationContextGlobalRef}}? {{Consts.InternalValidationInvokerGlobalRef}}.GetValidationContext()
 			{
-				if (this._validationContext == null)
-				{
-					return null;
-				}
-
-				return this._validationContext.TryGetTarget(out var existingContext)
-					? existingContext
-					: throw new global::System.InvalidOperationException("ValidationContext has not been set. This is an internal error.");
+				var validationContext = this._validationContext;
+				this._validationContext = null;
+				return validationContext;
 			}
 			"""
 		);
@@ -553,7 +760,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		return validateMethodFilePart;
 	}
 
-	private static string CreateBeforeOrAfterValidateHook(MethodProperties? method)
+	private static string CreateBeforeOrAfterValidateHook(MethodProperties? method, bool isAsync)
 	{
 		if (method is null)
 		{
@@ -588,7 +795,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 					// Call {method.MethodName} hook
 					var resultOf{method.MethodName} = await {method.MethodName}({arguments});
-					if (resultOf{method.MethodName} is not null) return resultOf{method.MethodName};
+					if (resultOf{method.MethodName} is not null) {ReturnStatement.Create($"resultOf{method.MethodName}", isAsync)}
 					""";
 			}
 
@@ -596,7 +803,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 				// Call {method.MethodName} hook
 				var resultOf{method.MethodName} = {method.MethodName}({arguments});
-				if (resultOf{method.MethodName} is not null) return new ValueTask<{Consts.ValidationResultGlobalRef}>(resultOf{method.MethodName});
+				if (resultOf{method.MethodName} is not null) {ReturnStatement.Create($"resultOf{method.MethodName}", isAsync)}
 				""";
 		}
 
@@ -662,18 +869,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		// Generate RULE
 		rulesClassBuilder.AddRuleForProperty(validatableProperty, attributesWithValidators);
 
-		bool anyAsync =
-			customValidationInterfaceBuilder.Calls.AnyAsync()
-			|| (propertiesObject.BeforeValidateMethod?.ReturnTypeType & ReturnTypeType.Awaitable) != 0
-			|| (propertiesObject.AfterValidateMethod?.ReturnTypeType & ReturnTypeType.Awaitable) != 0;
-
-		// Generate INVOCATION
-		invocationBuilder.AddInvocationForProperty(
-			validatableProperty,
-			attributesWithValidators,
-			propertyCalls,
-			anyAsync
-		);
+		// Generate INVOCATION; rendered later, once it is known whether the generated method is async
+		invocationBuilder.AddInvocationForProperty(validatableProperty, attributesWithValidators, propertyCalls);
 	}
 
 	private static void AddAutoValidators(

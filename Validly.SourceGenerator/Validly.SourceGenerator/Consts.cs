@@ -41,6 +41,11 @@ internal static class Consts
 	public const string IsValidMethodName = "IsValid";
 	public const string BeforeValidateMethodName = "BeforeValidate";
 	public const string AfterValidateMethodName = "AfterValidate";
+	public const string ValidateCoreMethodName = "ValidlyValidateCoreAsync";
+	public const string ValidateAsyncMethodName = "ValidateAsync";
+	public const string ValidateMethodName = "Validate";
+	public const string AsyncStateMachineAttributeQualifiedName =
+		"System.Runtime.CompilerServices.AsyncStateMachineAttribute";
 	public const string FromKeyedServicesAttributeName =
 		"Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
 }

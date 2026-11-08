@@ -17,10 +17,12 @@ internal static class SymbolMapper
 			skipFirstParameter ? Math.Max(methodSymbol.Parameters.Length - 1, 0) : methodSymbol.Parameters.Length
 		];
 
-		for (int i = skipFirstParameter ? 1 : 0; i < methodSymbol.Parameters.Length; i++)
+		int offset = skipFirstParameter ? 1 : 0;
+
+		for (int i = offset; i < methodSymbol.Parameters.Length; i++)
 		{
 			var parameter = methodSymbol.Parameters[i];
-			dependencies[i] = ExtractDependencyInjectionInfo(parameter);
+			dependencies[i - offset] = ExtractDependencyInjectionInfo(parameter);
 		}
 
 		var namedReturnType = methodSymbol.ReturnType as INamedTypeSymbol;
@@ -37,7 +39,25 @@ internal static class SymbolMapper
 				: ReturnTypeType.Void,
 			ReturnTypeGenericArgument = namedReturnType?.TypeArguments.FirstOrDefault()?.Name,
 			Dependencies = new EquatableArray<DependencyInjectionInfo>(dependencies),
+			IsCalledByBase = OverridesMethodOfValidatableType(methodSymbol),
 		};
+	}
+
+	private static bool OverridesMethodOfValidatableType(IMethodSymbol methodSymbol)
+	{
+		for (var overridden = methodSymbol.OverriddenMethod; overridden is not null; overridden = overridden.OverriddenMethod)
+		{
+			if (
+				overridden
+					.ContainingType.OriginalDefinition.GetAttributes()
+					.Any(static attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName)
+			)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private static DependencyInjectionInfo ExtractDependencyInjectionInfo(IParameterSymbol parameter)

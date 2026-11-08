@@ -239,15 +239,14 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 
 	void IInternalValidationResult.Combine(ValidationResult result)
 	{
-		// TODO: How about some CopyTo method? And what about result.GlobalMessages reset? (Cuz we reset result.PropertiesResultCollection but not the GlobalMessages)
-		// POP all messages from the result and add them to the current result
+		// Copy all messages from the result and add them to the current result
 		for (int index = 0; index < result.GlobalMessages.Count; index++)
 		{
 			ValidationMessage message = result.GlobalMessages[index];
 			AddGlobalMessageToArray(message);
 		}
 
-		// Concat properties
+		// Copy properties; property results are never moved between pooled collections
 		PropertiesResultCollection.Concat(result.PropertiesResultCollection);
 	}
 
@@ -260,17 +259,17 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 			AddGlobalMessageToArray(message);
 		}
 
-		// POP all properties from the result and add them to the current result
+		// Copy all properties from the result to the current result; the property results of the nested result
+		// stay owned by its (pooled) collection, so they are not shared with this result.
 		for (int index = 0; index < result.PropertiesResultCollection.Count; index++)
 		{
 			PropertyValidationResult propertyResult = result.PropertiesResultCollection[index];
-			((IInternalPropertyValidationResult)propertyResult).AsNestedPropertyValidationResult(propertyName);
-			// result.PropertiesResultCollection[index] = null!;
-			PropertiesResultCollection.Add(propertyResult);
+			PropertiesResultCollection.AddCopy(
+				propertyResult,
+				$"{propertyName}/{propertyResult.PropertyPath}",
+				findExisting: true
+			);
 		}
-
-		// // Reset count
-		// result.PropertiesResultCollection.Count = 0;
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]

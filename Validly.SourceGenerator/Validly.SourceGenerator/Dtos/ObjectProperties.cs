@@ -44,9 +44,14 @@ internal record ObjectProperties
 	public required EquatableArray<string> TypeParameters { get; init; }
 
 	/// <summary>
-	/// Object inherits
+	/// Object inherits (directly or indirectly) from a validatable object
 	/// </summary>
-	public required bool InheritsValidatableObject { get; init; }
+	public bool InheritsValidatableObject => BaseObject is not null;
+
+	/// <summary>
+	/// The nearest validatable ancestor; null when the object does not inherit from a validatable object
+	/// </summary>
+	public required BaseObjectProperties? BaseObject { get; init; }
 
 	/// <summary>
 	/// Is sealed class

@@ -315,24 +315,34 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				continue;
 			}
 
+			int nestedIndex = nestedValidationsDispose.Count;
+
+			// Null nested object is not validated; it is the job of the Required validator
 			nestedValidations.Add(
-				$"""
-				context.SetObject(this.{property.PropertyName});
-				(({Consts.InternalValidationInvokerGlobalRef})this.{property.PropertyName}).SetValidationContext(context);
-				#pragma warning disable CS8625
-				var nestedValidationResult{nestedValidationsDispose.Count} = await (({Consts.IValidatableGlobalRef})this.{property.PropertyName}).ValidateAsync({serviceProviderDep}, ct);
-				#pragma warning restore CS8625
-				nestedPropertiesCount += (({Consts.InternalValidationResultGlobalRef})nestedValidationResult{nestedValidationsDispose.Count}).GetPropertiesCount();
+				$$"""
+				{{Consts.ValidationResultGlobalRef}}? nestedValidationResult{{nestedIndex}} = null;
+				if (this.{{property.PropertyName}} is {} nestedObject{{nestedIndex}})
+				{
+					context.SetObject(nestedObject{{nestedIndex}});
+					(({{Consts.InternalValidationInvokerGlobalRef}})nestedObject{{nestedIndex}}).SetValidationContext(context);
+					#pragma warning disable CS8625
+					nestedValidationResult{{nestedIndex}} = await (({{Consts.IValidatableGlobalRef}})nestedObject{{nestedIndex}}).ValidateAsync({{serviceProviderDep}}, ct);
+					#pragma warning restore CS8625
+					nestedPropertiesCount += (({{Consts.InternalValidationResultGlobalRef}})nestedValidationResult{{nestedIndex}}).GetPropertiesCount();
+				}
 				"""
 			);
 
 			nestedValidationsDispose.Add(
-				$"""
-				result.CombineNested(nestedValidationResult{nestedValidationsDispose.Count}, {SymbolDisplay.FormatLiteral(
-					property.PropertyName,
-					true
-				)}{JsonNameArgument(property, properties.Config)});
-				nestedValidationResult{nestedValidationsDispose.Count}.Dispose();
+				$$"""
+				if (nestedValidationResult{{nestedIndex}} is not null)
+				{
+					result.CombineNested(nestedValidationResult{{nestedIndex}}, {{SymbolDisplay.FormatLiteral(
+						property.PropertyName,
+						true
+					)}}{{JsonNameArgument(property, properties.Config)}});
+					nestedValidationResult{{nestedIndex}}.Dispose();
+				}
 				"""
 			);
 		}
@@ -569,25 +579,24 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		var validateMethodFilePart = new SourceTextSectionBuilder().AppendLine(
 			$$"""
 
-			private {{Consts.WeakReferenceGlobalRef}}<{{Consts.ValidationContextGlobalRef}}>? _validationContext;
+			/// <summary>
+			/// Context of the parent validation; set just before this object is validated as a part of it
+			/// </summary>
+			private {{Consts.ValidationContextGlobalRef}}? _validationContext;
 
 			/// <inheritdoc />
 			void {{Consts.InternalValidationInvokerGlobalRef}}.SetValidationContext({{Consts.ValidationContextGlobalRef}} validationContext)
 			{
-				this._validationContext = new {{Consts.WeakReferenceGlobalRef}}<{{Consts.ValidationContextGlobalRef}}>(validationContext, false);
+				this._validationContext = validationContext;
 			}
 
 			/// <inheritdoc />
+			/// <remarks>The context is taken; it is cleared, so a later standalone validation creates its own context.</remarks>
 			{{Consts.ValidationContextGlobalRef}}? {{Consts.InternalValidationInvokerGlobalRef}}.GetValidationContext()
 			{
-				if (this._validationContext == null)
-				{
-					return null;
-				}
-
-				return this._validationContext.TryGetTarget(out var existingContext)
-					? existingContext
-					: throw new global::System.InvalidOperationException("ValidationContext has not been set. This is an internal error.");
+				var validationContext = this._validationContext;
+				this._validationContext = null;
+				return validationContext;
 			}
 			"""
 		);

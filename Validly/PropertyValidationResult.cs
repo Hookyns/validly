@@ -76,7 +76,7 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 			}
 		}
 
-		_messages = new SpanCollection<ValidationMessage>(messages.ToArray(), 0, messages.Count - 1, messages.Count);
+		_messages = new SpanCollection<ValidationMessage>(messages.ToArray(), 0, messages.Count, messages.Count);
 	}
 
 	/// <summary>
@@ -277,6 +277,26 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	)
 	{
 		return ((IInternalPropertyValidationResult)this).AsNestedPropertyValidationResult(parentPropertyName, null);
+	}
+
+	/// <summary>
+	/// Take the path of the source property result, optionally nested under the parent property
+	/// </summary>
+	/// <remarks>Path segments are immutable, so they can be shared with the source.</remarks>
+	internal void CopyPathFrom(PropertyValidationResult source, string? parentPropertyName, string? parentPropertyJsonName)
+	{
+		_propertyName = source._propertyName;
+		_propertyJsonName = source._propertyJsonName;
+
+		if (parentPropertyName is null)
+		{
+			PropertyPath = source.PropertyPath;
+			_parentSegments = source._parentSegments;
+			return;
+		}
+
+		PropertyPath = $"{parentPropertyName}/{source.PropertyPath}";
+		_parentSegments = new PropertyPathSegment(parentPropertyName, parentPropertyJsonName, source._parentSegments);
 	}
 
 	PropertyValidationResult IInternalPropertyValidationResult.AsNestedPropertyValidationResult(

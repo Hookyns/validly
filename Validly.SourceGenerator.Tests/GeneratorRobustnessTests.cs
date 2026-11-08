@@ -10,7 +10,7 @@ public class GeneratorRobustnessTests
 		GeneratorAssert.CompilesWithoutErrors(
 			"""
 			using Validly;
-			using Validly.Extensions.Validators.Strings;
+			using Validly.Validators;
 
 			namespace Test;
 
@@ -32,7 +32,7 @@ public class GeneratorRobustnessTests
 			"""
 			using System.Collections.Generic;
 			using Validly;
-			using Validly.Extensions.Validators.Strings;
+			using Validly.Validators;
 
 			namespace Test;
 
@@ -57,7 +57,7 @@ public class GeneratorRobustnessTests
 		GeneratorAssert.CompilesWithoutErrors(
 			"""
 			using Validly;
-			using Validly.Extensions.Validators.Strings;
+			using Validly.Validators;
 
 			namespace Test;
 
@@ -91,7 +91,7 @@ public class GeneratorRobustnessTests
 			"""
 			using System.Threading.Tasks;
 			using Validly;
-			using Validly.Extensions.Validators.Strings;
+			using Validly.Validators;
 
 			namespace Test;
 
@@ -158,7 +158,7 @@ public class GeneratorRobustnessTests
 		var result = GeneratorAssert.CompilesWithoutErrors(
 			"""
 			using Validly;
-			using Validly.Extensions.Validators.Strings;
+			using Validly.Validators;
 
 			namespace First
 			{
@@ -197,7 +197,7 @@ public class GlobalUsingsTests
 		var result = GeneratorAssert.CompilesWithoutErrors(
 			"""
 			using Validly;
-			using Validly.Extensions.Validators.Strings;
+			using Validly.Validators;
 
 			namespace Test;
 

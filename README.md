@@ -120,7 +120,7 @@ dotnet add package Validly.SourceGenerator
 
 Install the package with default validators:
 ```bash
-dotnet add package Validly.Extensions.Validators
+dotnet add package Validly.Validators
 ```
 
 ## Why Validly? Why Attribute-Based Validation?

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 using Validly;
-using Validly.Extensions.Validators.Strings;
+using Validly.Validators;
 
 namespace Benchmarks.Dev;
 

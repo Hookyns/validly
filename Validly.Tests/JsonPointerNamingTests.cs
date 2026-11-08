@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Validly.Extensions.Validators.Strings;
+using Validly.Validators;
 using Validly.Naming;
 
 namespace Validly.Tests;

@@ -4,8 +4,8 @@ internal static class Consts
 {
 	public const string CustomValidationAttribute = "Validly.Validators.CustomValidationAttribute";
 
-	public const string RequiredAttributeQualifiedName = "Validly.Extensions.Validators.Common.RequiredAttribute";
-	public const string InEnumAttributeQualifiedName = "Validly.Extensions.Validators.Enums.InEnumAttribute";
+	public const string RequiredAttributeQualifiedName = "Validly.Validators.RequiredAttribute";
+	public const string InEnumAttributeQualifiedName = "Validly.Validators.InEnumAttribute";
 	public const string ValidatableAttributeQualifiedName = "Validly.ValidatableAttribute";
 	public const string SkipItemsValidationAttributeQualifiedName = "Validly.SkipItemsValidationAttribute";
 	public const string ValidatorAttributeQualifiedName = "Validly.Validators.ValidatorAttribute";

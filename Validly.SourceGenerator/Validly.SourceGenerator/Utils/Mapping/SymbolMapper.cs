@@ -92,7 +92,7 @@ internal static class SymbolMapper
 			return $"({enumConstant.Type?.ToDisplayString() ?? "int"}) {enumConstant.Value}";
 		}
 
-		return SymbolDisplay.FormatPrimitive(value, quoteStrings: true, useHexadecimalNumbers: false);
+		return SymbolDisplay.FormatPrimitive(value, quoteStrings: true, useHexadecimalNumbers: false) ?? "null";
 	}
 
 	private static string GetMethodName(IMethodSymbol methodSymbol)

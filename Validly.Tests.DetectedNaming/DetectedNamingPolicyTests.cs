@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Validly.Extensions.Validators.Strings;
+using Validly.Validators;
 
 namespace Validly.Tests.DetectedNaming;
 

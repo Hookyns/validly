@@ -1,7 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Validly.Extensions.Validators.Common;
-using Validly.Extensions.Validators.Numbers;
-using Validly.Extensions.Validators.Strings;
 using Validly.Validators;
 
 namespace Validly.Tests;

@@ -1,0 +1,19 @@
+<Project>
+
+	<!--
+		Validly 2 contains the source generator. A Validly.SourceGenerator 1.x package (referenced directly or transitively)
+		would generate the validation a second time, so its analyzer is removed.
+	-->
+	<Target Name="_ValidlyRemoveLegacySourceGenerator" AfterTargets="ResolvePackageAssets" BeforeTargets="CoreCompile">
+		<ItemGroup>
+			<_ValidlyLegacyAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'Validly.SourceGenerator'" />
+			<Analyzer Remove="@(_ValidlyLegacyAnalyzer)" />
+		</ItemGroup>
+		<Warning
+			Condition="'@(_ValidlyLegacyAnalyzer)' != ''"
+			Code="VLY2000"
+			Text="The Validly.SourceGenerator package is not needed with Validly 2; the source generator is part of the Validly package. Remove the Validly.SourceGenerator (and Validly.Extensions.Validators) package reference."
+		/>
+	</Target>
+
+</Project>

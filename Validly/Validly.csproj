@@ -2,8 +2,7 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<PackageId>Validly</PackageId>
-		<Version>1.3.0</Version>
-		<Description>Powerful, efficient, and highly customizable validation library for .NET, leveraging the capabilities of C# Source Generators to provide compile-time validation logic generation.</Description>
+		<Description>Powerful, efficient, and highly customizable validation library for .NET, leveraging the capabilities of C# Source Generators to provide compile-time validation logic generation. Contains the runtime, the built-in validators and the source generator.</Description>
 		<PackageTags>validly valid validator validation annotations attributes source-generator</PackageTags>
 		<IsPackable>true</IsPackable>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -30,5 +29,35 @@
 	<ItemGroup>
 		<None Include="assets\README.md" Pack="true" PackagePath="" />
 		<None Include="assets\LICENSE" Pack="true" PackagePath="" />
+		<None Include="buildTransitive\Validly.props" Pack="true" PackagePath="buildTransitive;build" />
+		<None Include="buildTransitive\Validly.targets" Pack="true" PackagePath="buildTransitive;build" />
+	</ItemGroup>
+
+	<!-- The source generator is part of the package; one build per supported Roslyn version -->
+	<ItemGroup>
+		<ProjectReference
+			Include="..\Validly.SourceGenerator\Validly.SourceGenerator\Validly.SourceGenerator.csproj"
+			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
+		/>
+		<ProjectReference
+			Include="..\Validly.SourceGenerator\Validly.SourceGenerator.Roslyn5.0\Validly.SourceGenerator.Roslyn5.0.csproj"
+			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
+		/>
+	</ItemGroup>
+	<ItemGroup>
+		<None
+			Include="..\Validly.SourceGenerator\Validly.SourceGenerator\bin\$(Configuration)\netstandard2.0\Validly.SourceGenerator.dll"
+			Pack="true"
+			PackagePath="analyzers/dotnet/roslyn4.8/cs"
+			Visible="false"
+		/>
+		<None
+			Include="..\Validly.SourceGenerator\Validly.SourceGenerator.Roslyn5.0\bin\$(Configuration)\netstandard2.0\Validly.SourceGenerator.dll"
+			Pack="true"
+			PackagePath="analyzers/dotnet/roslyn5.0/cs"
+			Visible="false"
+		/>
 	</ItemGroup>
 </Project>

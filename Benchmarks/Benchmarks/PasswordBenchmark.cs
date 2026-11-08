@@ -2,7 +2,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using System.Runtime.CompilerServices;
 using Validly;
-using Validly.Extensions.Validators.Strings;
+using Validly.Validators;
 
 namespace Benchmarks;
 

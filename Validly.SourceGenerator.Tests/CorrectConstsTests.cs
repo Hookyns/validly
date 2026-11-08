@@ -8,8 +8,8 @@ public class CorrectConstsTests
 	public void ConstsMatchesTest()
 	{
 		Assert.Equal(Consts.CustomValidationAttribute, $"Validly.Validators.{nameof(CustomValidationAttribute)}");
-		Assert.Equal(Consts.RequiredAttributeQualifiedName, "Validly.Extensions.Validators.Common.RequiredAttribute");
-		Assert.Equal(Consts.InEnumAttributeQualifiedName, "Validly.Extensions.Validators.Enums.InEnumAttribute");
+		Assert.Equal(Consts.RequiredAttributeQualifiedName, "Validly.Validators.RequiredAttribute");
+		Assert.Equal(Consts.InEnumAttributeQualifiedName, "Validly.Validators.InEnumAttribute");
 		Assert.Equal(Consts.ValidatableAttributeQualifiedName, $"Validly.{nameof(ValidatableAttribute)}");
 		Assert.Equal(Consts.ValidatorAttributeQualifiedName, $"Validly.Validators.{nameof(ValidatorAttribute)}");
 		Assert.Equal(Consts.ValidationContextQualifiedName, $"Validly.{nameof(ValidationContext)}");

@@ -1,0 +1,8 @@
+<Project>
+
+	<!-- The source generator reads the <ValidlyConfiguration> MSBuild property -->
+	<ItemGroup>
+		<CompilerVisibleProperty Include="ValidlyConfiguration" />
+	</ItemGroup>
+
+</Project>

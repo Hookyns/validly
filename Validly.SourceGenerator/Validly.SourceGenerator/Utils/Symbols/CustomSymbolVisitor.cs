@@ -11,11 +11,14 @@ public class CustomSymbolVisitor
 		Func<INamedTypeSymbol, bool>? predicate = null
 	)
 	{
-		// Skip assemblies that don't reference Validly
+		// Skip assemblies that don't reference Validly; Validly itself contains the built-in validators
 		if (
-			!assemblySymbol.GlobalNamespace.ContainingModule?.ReferencedAssemblySymbols.Any(refAssembly =>
-				refAssembly.Name == "Validly"
-			) ?? true
+			assemblySymbol.Name != "Validly"
+			&& (
+				!assemblySymbol.GlobalNamespace.ContainingModule?.ReferencedAssemblySymbols.Any(refAssembly =>
+					refAssembly.Name == "Validly"
+				) ?? true
+			)
 		)
 		{
 			return ImmutableArray<INamedTypeSymbol>.Empty;

@@ -6,7 +6,7 @@ public class JsonNamingPolicyGeneratorTests
 {
 	private const string ValidatableSource = """
 		using Validly;
-		using Validly.Extensions.Validators.Strings;
+		using Validly.Validators;
 
 		namespace Test;
 

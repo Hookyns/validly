@@ -4,6 +4,7 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>12</LangVersion>
 		<IsPackable>false</IsPackable>
+		<Version>2.0.0-beta.1</Version>
 		<Authors>Roman Jámbor</Authors>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>

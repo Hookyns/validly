@@ -5,7 +5,7 @@ public class CollectionItemsGeneratorTests
 	private const string Source = """
 		using System.Collections.Immutable;
 		using Validly;
-		using Validly.Extensions.Validators.Common;
+		using Validly.Validators;
 
 		namespace Test;
 

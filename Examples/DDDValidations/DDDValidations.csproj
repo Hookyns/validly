@@ -7,10 +7,14 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
+	<!-- In a real project: <PackageReference Include="Validly" Version="2.*" /> (the generator is part of the package) -->
 	<ItemGroup>
-	  <PackageReference Include="Validly" Version="1.0.0" />
-	  <PackageReference Include="Validly.Extensions.Validators" Version="1.0.0" />
-	  <PackageReference Include="Validly.SourceGenerator" Version="1.0.1" />
+		<ProjectReference Include="..\..\Validly\Validly.csproj" />
+		<ProjectReference
+			Include="..\..\Validly.SourceGenerator\Validly.SourceGenerator\Validly.SourceGenerator.csproj"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+		/>
 	</ItemGroup>
 
 </Project>

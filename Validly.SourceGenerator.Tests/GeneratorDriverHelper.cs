@@ -17,7 +17,6 @@ internal static class GeneratorDriverHelper
 		return trustedAssemblies
 			.Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
 			.Append(MetadataReference.CreateFromFile(typeof(ValidatableAttribute).Assembly.Location))
-			.Append(MetadataReference.CreateFromFile(typeof(Validly.Extensions.Validators.Strings.MinLengthAttribute).Assembly.Location))
 			.ToImmutableArray();
 	});
 

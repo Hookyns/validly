@@ -11,14 +11,14 @@ internal record AttributeProperties
 	public static readonly AttributeProperties Required =
 		new()
 		{
-			QualifiedName = "Validly.Extensions.Validators.Common.RequiredAttribute",
+			QualifiedName = "Validly.Validators.RequiredAttribute",
 			Arguments = new EquatableArray<string>(new[] { "allowEmptyStrings: true" }),
 		};
 
 	public static readonly AttributeProperties InEnum =
 		new()
 		{
-			QualifiedName = "Validly.Extensions.Validators.Enums.InEnumAttribute",
+			QualifiedName = "Validly.Validators.InEnumAttribute",
 			Arguments = EquatableArray<string>.Empty,
 		};
 

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!--
+		The same generator, compiled against Roslyn 5.0 (.NET 10 SDK, VS 2026).
+		Shipped in the Validly package as analyzers/dotnet/roslyn5.0/cs; the SDK picks the highest roslyn{X.Y} folder
+		that is not newer than the compiler, older compilers use analyzers/dotnet/roslyn4.8/cs.
+		Use ROSLYN_5_0_OR_GREATER for code that requires the newer Roslyn APIs.
+	-->
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<AssemblyName>Validly.SourceGenerator</AssemblyName>
+		<RootNamespace>Validly.SourceGenerator</RootNamespace>
+		<Nullable>enable</Nullable>
+		<LangVersion>12</LangVersion>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<IsRoslynComponent>true</IsRoslynComponent>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<IsPackable>false</IsPackable>
+		<DefineConstants>$(DefineConstants);ROSLYN_5_0_OR_GREATER</DefineConstants>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Include="..\Validly.SourceGenerator\**\*.cs" Exclude="..\Validly.SourceGenerator\obj\**;..\Validly.SourceGenerator\bin\**" />
+		<Compile Include="..\..\Validly\Naming\ValidlyNamingPolicy.cs" Link="Shared\ValidlyNamingPolicy.cs" />
+		<Compile Include="..\..\Validly\Naming\NamingPolicyConverter.cs" Link="Shared\NamingPolicyConverter.cs" />
+		<AdditionalFiles Include="..\Validly.SourceGenerator\AnalyzerReleases.Shipped.md" />
+		<AdditionalFiles Include="..\Validly.SourceGenerator\AnalyzerReleases.Unshipped.md" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="JetBrains.Annotations" Version="2025.2.4" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
+		<PackageReference Include="PolySharp" Version="1.15.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+</Project>

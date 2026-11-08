@@ -1,4 +1,4 @@
-using Validly.Extensions.Validators.Enums;
+using Validly.Validators;
 
 namespace Validly.Tests.Validators.Enums;
 

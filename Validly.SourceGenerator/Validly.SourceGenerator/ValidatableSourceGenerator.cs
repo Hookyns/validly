@@ -1,7 +1,10 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Validly.Naming;
 using Validly.SourceGenerator.Builders;
+using Validly.SourceGenerator.Diagnostics;
 using Validly.SourceGenerator.Dtos;
 using Validly.SourceGenerator.Utils;
 using Validly.SourceGenerator.Utils.Mapping;
@@ -18,7 +21,32 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	{
 		var allValidators = ValidatorsIncrementalValueProvider.Get(initContext);
 		var validatableObjects = ValidatableObjectIncrementalValueProvider.Get(initContext);
-		var config = ConfigOptionsProvider.Get(initContext);
+		var config = ConfigOptionsProvider
+			.Get(initContext)
+			.Combine(JsonNamingPolicyDetectionProvider.Get(initContext))
+			// Explicit configuration wins over the detected policy
+			.Select(
+				(tuple, _) =>
+					tuple.Left.JsonNamingPolicy is not null
+						? tuple.Left
+						: tuple.Left with
+						{
+							JsonNamingPolicy = tuple.Right,
+						}
+			);
+
+		initContext.RegisterSourceOutput(
+			config.Select((configuration, _) => configuration.UnknownJsonNamingPolicy),
+			static (context, unknownPolicy) =>
+			{
+				if (unknownPolicy is not null)
+				{
+					context.ReportDiagnostic(
+						Diagnostic.Create(DiagnosticDescriptors.UnknownJsonNamingPolicy, Location.None, unknownPolicy)
+					);
+				}
+			}
+		);
 
 		initContext.RegisterSourceOutput(
 			validatableObjects
@@ -65,7 +93,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		var invocationBuilder = new PropertiesValidationInvocationBuilder(
 			rulesClassName,
 			dependencies,
-			properties.Object.ExitEarly ?? properties.Config.ExitEarly
+			properties.Object.ExitEarly ?? properties.Config.ExitEarly,
+			properties.Config.JsonNamingPolicy ?? ValidlyNamingPolicy.None
 		);
 
 		// Generate stuff for each property
@@ -188,6 +217,16 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	}
 
 	/// <summary>
+	/// Returns the JSON name argument of the CombineNested call; empty when the name is resolved at runtime
+	/// </summary>
+	private static string JsonNameArgument(PropertyProperties property, ValidlyConfiguration config)
+	{
+		string? jsonName = JsonNameResolver.Resolve(property, config.JsonNamingPolicy ?? ValidlyNamingPolicy.None);
+
+		return jsonName is null ? string.Empty : $", {SymbolDisplay.FormatLiteral(jsonName, true)}";
+	}
+
+	/// <summary>
 	/// Create list of validation attributes. Include auto validators if enabled.
 	/// </summary>
 	/// <param name="properties"></param>
@@ -289,7 +328,10 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 			nestedValidationsDispose.Add(
 				$"""
-				result.CombineNested(nestedValidationResult{nestedValidationsDispose.Count}, "{property.PropertyName}");
+				result.CombineNested(nestedValidationResult{nestedValidationsDispose.Count}, {SymbolDisplay.FormatLiteral(
+					property.PropertyName,
+					true
+				)}{JsonNameArgument(property, properties.Config)});
 				nestedValidationResult{nestedValidationsDispose.Count}.Dispose();
 				"""
 			);

@@ -8,6 +8,11 @@ internal record PropertyProperties
 
 	public required string DisplayName { get; init; }
 
+	/// <summary>
+	/// Explicit JSON name of the property from [JsonPropertyName]
+	/// </summary>
+	public required string? JsonName { get; init; }
+
 	public required string PropertyType { get; init; }
 
 	/// <summary>

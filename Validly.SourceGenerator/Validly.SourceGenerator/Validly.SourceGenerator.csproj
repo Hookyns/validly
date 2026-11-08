@@ -15,12 +15,21 @@
 		<IsPackable>true</IsPackable>
 	</PropertyGroup>
 	<ItemGroup>
+		<AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+		<AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+	</ItemGroup>
+	<ItemGroup>
 		<None Include="assets/README.md" Pack="true" PackagePath="" />
 		<None Include="assets/LICENSE" Pack="true" PackagePath="" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 		<None Update="Validly.SourceGenerator.props" Pack="true" PackagePath="build" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- Shared with the runtime, so the names are converted the very same way at compile time and at runtime -->
+		<Compile Include="..\..\Validly\Naming\ValidlyNamingPolicy.cs" Link="Shared\ValidlyNamingPolicy.cs" />
+		<Compile Include="..\..\Validly\Naming\NamingPolicyConverter.cs" Link="Shared\NamingPolicyConverter.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">

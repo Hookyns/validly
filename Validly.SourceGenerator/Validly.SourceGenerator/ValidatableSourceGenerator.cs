@@ -48,7 +48,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		// Service provider and async-ness are given by the whole hierarchy; the public methods must match the base ones
 		var flags = new HierarchyFlags(
 			level.Dependencies.HasDependencies || (baseFlags?.RequiresServiceProvider ?? false),
-			level.IsAsync || (baseFlags?.IsAsync ?? false)
+			level.IsAsync || (baseFlags?.IsAsync ?? false),
+			!level.IsInherentlyAsync && (baseFlags?.HasValidateMethod ?? true)
 		);
 
 		var rulesClassBuilder = level.RulesClassBuilder;
@@ -116,7 +117,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	)
 	{
 		// Overriding hooks are called by the base object, not by this level
-		if (objectProperties.BeforeValidateMethod is { IsOverride: false })
+		if (objectProperties.BeforeValidateMethod is { IsCalledByBase: false })
 		{
 			foreach (var dependency in objectProperties.BeforeValidateMethod.Dependencies)
 			{
@@ -124,7 +125,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			}
 		}
 
-		if (objectProperties.AfterValidateMethod is { IsOverride: false })
+		if (objectProperties.AfterValidateMethod is { IsCalledByBase: false })
 		{
 			foreach (var dependency in objectProperties.AfterValidateMethod.Dependencies)
 			{
@@ -160,8 +161,12 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	/// Shape of the generated validation of an object, given by its whole hierarchy
 	/// </summary>
 	/// <param name="RequiresServiceProvider">Public validation methods require IServiceProvider</param>
-	/// <param name="IsAsync">Validation is asynchronous; there is no synchronous Validate() method</param>
-	private readonly record struct HierarchyFlags(bool RequiresServiceProvider, bool IsAsync);
+	/// <param name="IsAsync">The core validation method is asynchronous (it awaits)</param>
+	/// <param name="HasValidateMethod">
+	/// Synchronous Validate() method is generated; it is, unless there are asynchronous validators or hooks.
+	/// Nested objects make the validation asynchronous, but it usually completes synchronously.
+	/// </param>
+	private readonly record struct HierarchyFlags(bool RequiresServiceProvider, bool IsAsync, bool HasValidateMethod);
 
 	/// <summary>
 	/// Analyzed level (one class of a hierarchy) of a validatable object
@@ -180,6 +185,11 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		/// Validation of this level is asynchronous (its base is not taken into account)
 		/// </summary>
 		public required bool IsAsync { get; init; }
+
+		/// <summary>
+		/// This level has asynchronous validators or hooks; nested objects are not taken into account
+		/// </summary>
+		public required bool IsInherentlyAsync { get; init; }
 	}
 
 	private static LevelAnalysis AnalyzeLevel(
@@ -238,11 +248,15 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			);
 		}
 
-		bool isAsync =
+		// Asynchronous validators or hooks of this level
+		bool isInherentlyAsync =
 			customValidationsInterfaceBuilder.Calls.AnyAsync()
 			|| invocationBuilder.Calls.AnyAsync()
 			|| IsCalledAwaitableHook(obj.BeforeValidateMethod)
-			|| IsCalledAwaitableHook(obj.AfterValidateMethod)
+			|| IsCalledAwaitableHook(obj.AfterValidateMethod);
+
+		bool isAsync =
+			isInherentlyAsync
 			// TODO: Can we handle this differently? How should we check if that type is async validator? For now, we force async behavior if there is any property of Validatable type
 			|| obj.Properties.Any(prop => prop.PropertyIsOfValidatableType);
 
@@ -256,12 +270,13 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			CustomValidationsInterfaceBuilder = customValidationsInterfaceBuilder,
 			InvocationBuilder = invocationBuilder,
 			IsAsync = isAsync,
+			IsInherentlyAsync = isInherentlyAsync,
 		};
 	}
 
 	private static bool IsCalledAwaitableHook(MethodProperties? hook)
 	{
-		return hook is not null && !hook.IsOverride && (hook.ReturnTypeType & ReturnTypeType.Awaitable) != 0;
+		return hook is not null && !hook.IsCalledByBase && (hook.ReturnTypeType & ReturnTypeType.Awaitable) != 0;
 	}
 
 	/// <summary>
@@ -276,7 +291,11 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		// Referenced assembly; read from its members
 		if (!baseObject.IsFromSource || baseObject.Object is null)
 		{
-			return new HierarchyFlags(baseObject.RequiresServiceProvider, baseObject.IsAsync);
+			return new HierarchyFlags(
+				baseObject.RequiresServiceProvider,
+				baseObject.IsAsync,
+				baseObject.HasValidateMethod
+			);
 		}
 
 		// Same compilation; resolved the same way as the generated code of the ancestor is
@@ -287,7 +306,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 		return new HierarchyFlags(
 			level.Dependencies.HasDependencies || parentFlags.RequiresServiceProvider,
-			level.IsAsync || parentFlags.IsAsync
+			level.IsAsync || parentFlags.IsAsync,
+			!level.IsInherentlyAsync && (baseObject.Object.BaseObject is null || parentFlags.HasValidateMethod)
 		);
 	}
 
@@ -502,7 +522,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 	private static MethodProperties? GetCalledHook(MethodProperties? hook)
 	{
-		return hook is { IsOverride: false } ? hook : null;
+		return hook is { IsCalledByBase: false } ? hook : null;
 	}
 
 	/// <summary>
@@ -538,8 +558,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			AppendValidateAsyncMethod(builder, virtualModifier, requiresServiceProvider: true);
 		}
 
-		// Validate(); only for synchronous validation; the base is synchronous too then
-		if (!flags.IsAsync)
+		// Validate(); unless the validation is inherently asynchronous; the base has Validate() too then
+		if (flags.HasValidateMethod)
 		{
 			if (baseFlags is null)
 			{
@@ -653,11 +673,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 				if (!task.IsCompletedSuccessfully)
 				{
-					#if NET7_0_OR_GREATER
-					throw new global::System.Diagnostics.UnreachableException("The task should be completed synchronously but was not.");
-					#else
-					throw new global::System.InvalidOperationException("The task should be completed synchronously but was not.");
-					#endif
+					throw new global::System.InvalidOperationException("The validation did not complete synchronously (an asynchronous validator or hook of a nested object or collection item); use ValidateAsync instead.");
 				}
 
 				return task.Result;

@@ -39,8 +39,25 @@ internal static class SymbolMapper
 				: ReturnTypeType.Void,
 			ReturnTypeGenericArgument = namedReturnType?.TypeArguments.FirstOrDefault()?.Name,
 			Dependencies = new EquatableArray<DependencyInjectionInfo>(dependencies),
-			IsOverride = methodSymbol.IsOverride,
+			IsCalledByBase = OverridesMethodOfValidatableType(methodSymbol),
 		};
+	}
+
+	private static bool OverridesMethodOfValidatableType(IMethodSymbol methodSymbol)
+	{
+		for (var overridden = methodSymbol.OverriddenMethod; overridden is not null; overridden = overridden.OverriddenMethod)
+		{
+			if (
+				overridden
+					.ContainingType.OriginalDefinition.GetAttributes()
+					.Any(static attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName)
+			)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private static DependencyInjectionInfo ExtractDependencyInjectionInfo(IParameterSymbol parameter)

@@ -487,7 +487,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 					}
 					"""
 				: $$"""
-					for (int collectionItemIndex{{n}} = 0; collectionItemIndex{{n}} < collection{{n}}.{{(property.CollectionItemsKind == CollectionItemsKind.Array ? "Length" : "Count")}}; collectionItemIndex{{n}}++)
+					for (int collectionItemIndex{{n}} = 0; collectionItemIndex{{n}} < collection{{n}}.{{(property.CollectionItemsKind is CollectionItemsKind.Array or CollectionItemsKind.ImmutableArray ? "Length" : "Count")}}; collectionItemIndex{{n}}++)
 					{
 						var collectionItemValue{{n}} = collection{{n}}[collectionItemIndex{{n}}];
 					{{itemValidation.Indent()}}
@@ -498,7 +498,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				$$"""
 				// Validate items of "{{property.PropertyName}}"
 				global::System.Collections.Generic.List<(int Index, {{Consts.ValidationResultGlobalRef}} Result)>? collectionItemResults{{n}} = null;
-				if (this.{{property.PropertyName}} is {} collection{{n}})
+				if (this.{{property.PropertyName}} is {} collection{{n}}{{(property.CollectionItemsKind == CollectionItemsKind.ImmutableArray ? $" && !collection{n}.IsDefault" : string.Empty)}})
 				{
 				{{loop.Indent()}}
 				}

@@ -61,6 +61,11 @@ internal enum CollectionItemsKind
 	List,
 
 	/// <summary>
+	/// ImmutableArray; indexed, Length; default (uninitialized) array is skipped
+	/// </summary>
+	ImmutableArray,
+
+	/// <summary>
 	/// Any other IEnumerable; enumerated
 	/// </summary>
 	Enumerable,

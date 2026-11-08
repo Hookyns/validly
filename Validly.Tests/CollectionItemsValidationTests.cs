@@ -257,3 +257,53 @@ public class CollectionItemsValidationTests
 		Assert.Contains(errors, e => e.Pointer == "#/Lines/2" && e.ResourceKey == "OrderLine.Discontinued");
 	}
 }
+
+[Validatable]
+public partial class CollectionEdgeCases
+{
+	// Static and indexer properties are not validated as collections
+	public static List<CollectionOrderLine> Templates { get; } = [new CollectionOrderLine()];
+
+	public System.Collections.Immutable.ImmutableArray<CollectionOrderLine> Immutable { get; set; }
+}
+
+public class CollectionItemsEdgeCaseTests
+{
+	[Fact]
+	public void DefaultImmutableArray_IsSkipped_StaticCollectionIsIgnored()
+	{
+		using var result = new CollectionEdgeCases().Validate();
+
+		Assert.True(result.IsSuccess);
+	}
+
+	[Fact]
+	public void ImmutableArray_ItemsAreValidated()
+	{
+		using var result = new CollectionEdgeCases
+		{
+			Immutable = [new CollectionOrderLine { ProductCode = "A", Quantity = 1 }, new CollectionOrderLine { Quantity = 1 }],
+		}.Validate();
+
+		Assert.Equal("Immutable/1/ProductCode", Assert.Single(result.Properties, p => !p.IsSuccess).PropertyPath);
+	}
+
+	[Fact]
+	public void ObjectWithCollection_HasSynchronousValidate()
+	{
+		using var result = new CollectionOrder { Lines = [new CollectionOrderLine { Quantity = 1 }] }.Validate();
+
+		Assert.Equal("Lines/0/ProductCode", Assert.Single(result.Properties, p => !p.IsSuccess).PropertyPath);
+	}
+
+	[Fact]
+	public void LargeNestedCollection_IsCombinedWithoutLookups()
+	{
+		var lines = Enumerable.Range(0, 5000).Select(_ => new CollectionOrderLine { Quantity = 0 }).ToList();
+
+		using var result = new CollectionNestedRoot { Order = new CollectionOrder { Lines = lines } }.Validate();
+
+		Assert.Equal(10_000, result.Properties.Count(p => !p.IsSuccess));
+		Assert.Contains(result.Properties, p => p.PropertyPath == "Order/Lines/4999/Quantity");
+	}
+}

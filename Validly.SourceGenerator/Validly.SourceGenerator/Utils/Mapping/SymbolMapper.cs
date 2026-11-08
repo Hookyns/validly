@@ -110,6 +110,10 @@ internal static class SymbolMapper
 		var attrs = propertySymbol.GetAttributes();
 		var attributes = attrs.Select(MapAttribute).ToArray();
 
+		// Only readable instance properties can be validated as nested objects / collections (this.Property)
+		bool isReadableInstanceProperty =
+			!propertySymbol.IsStatic && !propertySymbol.IsIndexer && propertySymbol.GetMethod is not null;
+
 		return new PropertyProperties
 		{
 			PropertyName = propertySymbol.Name,
@@ -134,11 +138,15 @@ internal static class SymbolMapper
 					semanticModel.GetNullableContext(propertySymbol.Locations[0].SourceSpan.Start)
 					& NullableContext.Enabled
 				) != NullableContext.Enabled,
-			PropertyIsOfValidatableType = propertySymbol
-				.Type.GetAttributes()
-				.Any(attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName),
+			PropertyIsOfValidatableType =
+				isReadableInstanceProperty
+				&& propertySymbol
+					.Type.GetAttributes()
+					.Any(attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName),
 			Attributes = new EquatableArray<AttributeProperties>(attributes),
-			CollectionItemsKind = GetCollectionItemsKind(propertySymbol.Type),
+			CollectionItemsKind = isReadableInstanceProperty
+				? GetCollectionItemsKind(propertySymbol.Type)
+				: CollectionItemsKind.None,
 			SkipItemsValidation = attrs.Any(attr =>
 				attr.AttributeClass?.GetQualifiedName() == Consts.SkipItemsValidationAttributeQualifiedName
 			),
@@ -174,12 +182,14 @@ internal static class SymbolMapper
 			return CollectionItemsKind.None;
 		}
 
-		return namedType.OriginalDefinition.ToDisplayString()
-			is "System.Collections.Generic.List<T>"
-				or "System.Collections.Generic.IList<T>"
-				or "System.Collections.Generic.IReadOnlyList<T>"
-			? CollectionItemsKind.List
-			: CollectionItemsKind.Enumerable;
+		return namedType.OriginalDefinition.ToDisplayString() switch
+		{
+			"System.Collections.Generic.List<T>"
+			or "System.Collections.Generic.IList<T>"
+			or "System.Collections.Generic.IReadOnlyList<T>" => CollectionItemsKind.List,
+			"System.Collections.Immutable.ImmutableArray<T>" => CollectionItemsKind.ImmutableArray,
+			_ => CollectionItemsKind.Enumerable,
+		};
 	}
 
 	private static bool IsValidatableType(ITypeSymbol type)

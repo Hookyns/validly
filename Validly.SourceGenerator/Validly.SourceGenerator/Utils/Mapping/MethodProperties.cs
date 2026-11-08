@@ -26,4 +26,9 @@ internal record MethodProperties
 	/// Dependencies of the method
 	/// </summary>
 	public required EquatableArray<DependencyInjectionInfo> Dependencies { get; init; }
+
+	/// <summary>
+	/// The method overrides a method of the base class
+	/// </summary>
+	public bool IsOverride { get; init; }
 }

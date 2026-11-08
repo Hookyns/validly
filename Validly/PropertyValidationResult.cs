@@ -308,7 +308,16 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 		_propertyJsonName = source._propertyJsonName;
 		PropertyPath = CreateNestedPath(source, parentPropertyName, indexName);
 
-		PropertyPathSegment? segments = source._parentSegments;
+		if (parentPropertyName is null)
+		{
+			_parentSegments = source._parentSegments;
+			_pendingParentName = source._pendingParentName;
+			_pendingParentJsonName = source._pendingParentJsonName;
+			return;
+		}
+
+		// Path segments are immutable, so they can be shared with the source
+		PropertyPathSegment? segments = source.GetParentSegments();
 
 		// Index of a collection item is used as it is in the JSON pointer; the naming policy does not apply
 		if (indexName is not null)
@@ -316,12 +325,10 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 			segments = new PropertyPathSegment(indexName, indexName, segments);
 		}
 
-		if (parentPropertyName is not null)
-		{
-			segments = new PropertyPathSegment(parentPropertyName, parentPropertyJsonName, segments);
-		}
-
+		// The new outermost parent stays pending; one level of nesting does not allocate a segment
 		_parentSegments = segments;
+		_pendingParentName = parentPropertyName;
+		_pendingParentJsonName = parentPropertyJsonName;
 	}
 
 	/// <summary>
@@ -357,6 +364,8 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 		_propertyName = propertyName;
 		_propertyJsonName = propertyJsonName;
 		_parentSegments = parentSegments;
+		_pendingParentName = null;
+		_pendingParentJsonName = null;
 	}
 
 	PropertyValidationResult IInternalPropertyValidationResult.AsNestedPropertyValidationResult(

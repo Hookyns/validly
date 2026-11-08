@@ -25,7 +25,7 @@ public sealed class SpanCollection<TItem> : IReadOnlyList<TItem>, ICollection<TI
 
 	/// <param name="list"></param>
 	/// <param name="startPosition">Beginning of the buffer</param>
-	/// <param name="endPosition">End of the buffer</param>
+	/// <param name="endPosition">End of the buffer (exclusive)</param>
 	/// <param name="count">Number of items in the buffer</param>
 	public SpanCollection(TItem[] list, int startPosition, int endPosition, int count)
 	{
@@ -73,7 +73,7 @@ public sealed class SpanCollection<TItem> : IReadOnlyList<TItem>, ICollection<TI
 #endif
 	public void Add(TItem item)
 	{
-		if (_count > (_endPosition - _startPosition))
+		if (_count >= (_endPosition - _startPosition))
 		{
 			throw new IndexOutOfRangeException("Collection is full.");
 		}

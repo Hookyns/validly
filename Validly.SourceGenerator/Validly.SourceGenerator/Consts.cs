@@ -7,10 +7,13 @@ internal static class Consts
 	public const string RequiredAttributeQualifiedName = "Validly.Extensions.Validators.Common.RequiredAttribute";
 	public const string InEnumAttributeQualifiedName = "Validly.Extensions.Validators.Enums.InEnumAttribute";
 	public const string ValidatableAttributeQualifiedName = "Validly.ValidatableAttribute";
+	public const string SkipItemsValidationAttributeQualifiedName = "Validly.SkipItemsValidationAttribute";
 	public const string ValidatorAttributeQualifiedName = "Validly.Validators.ValidatorAttribute";
 	public const string ValidationContextQualifiedName = "Validly.ValidationContext";
 	public const string ValidationResultQualifiedName = "Validly.ValidationResult";
 	public const string ExtendableValidationResultQualifiedName = "Validly.ExtendableValidationResult";
+	public const string JsonPropertyNameAttributeQualifiedName =
+		"System.Text.Json.Serialization.JsonPropertyNameAttribute";
 
 	public const string InternalValidationInvokerGlobalRef = "global::Validly.Validators.IInternalValidationInvoker";
 
@@ -41,6 +44,11 @@ internal static class Consts
 	public const string IsValidMethodName = "IsValid";
 	public const string BeforeValidateMethodName = "BeforeValidate";
 	public const string AfterValidateMethodName = "AfterValidate";
+	public const string ValidateCoreMethodName = "ValidlyValidateCoreAsync";
+	public const string ValidateAsyncMethodName = "ValidateAsync";
+	public const string ValidateMethodName = "Validate";
+	public const string AsyncStateMachineAttributeQualifiedName =
+		"System.Runtime.CompilerServices.AsyncStateMachineAttribute";
 	public const string FromKeyedServicesAttributeName =
 		"Microsoft.Extensions.DependencyInjection.FromKeyedServicesAttribute";
 }

@@ -17,10 +17,12 @@ internal static class SymbolMapper
 			skipFirstParameter ? Math.Max(methodSymbol.Parameters.Length - 1, 0) : methodSymbol.Parameters.Length
 		];
 
-		for (int i = skipFirstParameter ? 1 : 0; i < methodSymbol.Parameters.Length; i++)
+		int offset = skipFirstParameter ? 1 : 0;
+
+		for (int i = offset; i < methodSymbol.Parameters.Length; i++)
 		{
 			var parameter = methodSymbol.Parameters[i];
-			dependencies[i] = ExtractDependencyInjectionInfo(parameter);
+			dependencies[i - offset] = ExtractDependencyInjectionInfo(parameter);
 		}
 
 		var namedReturnType = methodSymbol.ReturnType as INamedTypeSymbol;
@@ -37,7 +39,25 @@ internal static class SymbolMapper
 				: ReturnTypeType.Void,
 			ReturnTypeGenericArgument = namedReturnType?.TypeArguments.FirstOrDefault()?.Name,
 			Dependencies = new EquatableArray<DependencyInjectionInfo>(dependencies),
+			IsCalledByBase = OverridesMethodOfValidatableType(methodSymbol),
 		};
+	}
+
+	private static bool OverridesMethodOfValidatableType(IMethodSymbol methodSymbol)
+	{
+		for (var overridden = methodSymbol.OverriddenMethod; overridden is not null; overridden = overridden.OverriddenMethod)
+		{
+			if (
+				overridden
+					.ContainingType.OriginalDefinition.GetAttributes()
+					.Any(static attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName)
+			)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private static DependencyInjectionInfo ExtractDependencyInjectionInfo(IParameterSymbol parameter)
@@ -90,6 +110,10 @@ internal static class SymbolMapper
 		var attrs = propertySymbol.GetAttributes();
 		var attributes = attrs.Select(MapAttribute).ToArray();
 
+		// Only readable instance properties can be validated as nested objects / collections (this.Property)
+		bool isReadableInstanceProperty =
+			!propertySymbol.IsStatic && !propertySymbol.IsIndexer && propertySymbol.GetMethod is not null;
+
 		return new PropertyProperties
 		{
 			PropertyName = propertySymbol.Name,
@@ -97,7 +121,15 @@ internal static class SymbolMapper
 				attrs
 					.FirstOrDefault(attr => attr.AttributeClass?.Name == "DisplayNameAttribute")
 					?.ConstructorArguments[0]
-					.Value?.ToString() ?? propertySymbol.Name,
+					.Value?.ToString()
+				?? propertySymbol.Name,
+			JsonName =
+				attrs
+					.FirstOrDefault(attr =>
+						attr.AttributeClass?.GetQualifiedName() == Consts.JsonPropertyNameAttributeQualifiedName
+					)
+					?.ConstructorArguments.FirstOrDefault()
+					.Value as string,
 			PropertyType = propertySymbol.Type.Name,
 			PropertyTypeKind = propertySymbol.Type.TypeKind,
 			Nullable =
@@ -106,11 +138,66 @@ internal static class SymbolMapper
 					semanticModel.GetNullableContext(propertySymbol.Locations[0].SourceSpan.Start)
 					& NullableContext.Enabled
 				) != NullableContext.Enabled,
-			PropertyIsOfValidatableType = propertySymbol
-				.Type.GetAttributes()
-				.Any(attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName),
+			PropertyIsOfValidatableType =
+				isReadableInstanceProperty
+				&& propertySymbol
+					.Type.GetAttributes()
+					.Any(attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName),
 			Attributes = new EquatableArray<AttributeProperties>(attributes),
+			CollectionItemsKind = isReadableInstanceProperty
+				? GetCollectionItemsKind(propertySymbol.Type)
+				: CollectionItemsKind.None,
+			SkipItemsValidation = attrs.Any(attr =>
+				attr.AttributeClass?.GetQualifiedName() == Consts.SkipItemsValidationAttributeQualifiedName
+			),
 		};
+	}
+
+	/// <summary>
+	/// Detect a collection of validatable objects
+	/// </summary>
+	private static CollectionItemsKind GetCollectionItemsKind(ITypeSymbol type)
+	{
+		if (type is IArrayTypeSymbol arrayType)
+		{
+			return arrayType.Rank == 1 && IsValidatableType(arrayType.ElementType)
+				? CollectionItemsKind.Array
+				: CollectionItemsKind.None;
+		}
+
+		if (type is not INamedTypeSymbol namedType || type.SpecialType == SpecialType.System_String)
+		{
+			return CollectionItemsKind.None;
+		}
+
+		var enumerableType =
+			namedType.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+				? namedType
+				: namedType.AllInterfaces.FirstOrDefault(static i =>
+					i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+				);
+
+		if (enumerableType is null || !IsValidatableType(enumerableType.TypeArguments[0]))
+		{
+			return CollectionItemsKind.None;
+		}
+
+		return namedType.OriginalDefinition.ToDisplayString() switch
+		{
+			"System.Collections.Generic.List<T>"
+			or "System.Collections.Generic.IList<T>"
+			or "System.Collections.Generic.IReadOnlyList<T>" => CollectionItemsKind.List,
+			"System.Collections.Immutable.ImmutableArray<T>" => CollectionItemsKind.ImmutableArray,
+			_ => CollectionItemsKind.Enumerable,
+		};
+	}
+
+	private static bool IsValidatableType(ITypeSymbol type)
+	{
+		return type is INamedTypeSymbol namedType
+			&& namedType
+				.OriginalDefinition.GetAttributes()
+				.Any(static attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName);
 	}
 
 	private static AttributeProperties MapAttribute(AttributeData arg)

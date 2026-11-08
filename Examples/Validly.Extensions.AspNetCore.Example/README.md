@@ -42,7 +42,7 @@ With single device (MD Ryzen 7 PRO 8840HS, 1 CPU, 16 logical and 8 physical core
         18,
         120
       ],
-      "pointer": "#Age",
+      "pointer": "#/age",
       "fieldName": "Age"
     },
     {
@@ -51,7 +51,7 @@ With single device (MD Ryzen 7 PRO 8840HS, 1 CPU, 16 logical and 8 physical core
       "args": [
         12
       ],
-      "pointer": "#Password",
+      "pointer": "#/password",
       "fieldName": "Password"
     },
     {
@@ -61,7 +61,7 @@ With single device (MD Ryzen 7 PRO 8840HS, 1 CPU, 16 logical and 8 physical core
         5,
         20
       ],
-      "pointer": "#Username",
+      "pointer": "#/username",
       "fieldName": "Username"
     }
   ]

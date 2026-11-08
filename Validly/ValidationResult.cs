@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Validly.Details;
+using Validly.Naming;
 using Validly.Utils;
 
 namespace Validly;
@@ -83,7 +84,16 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 	/// Copies data to a structure similar to the validation problem details defined in RFC 9457
 	/// </summary>
 	/// <returns></returns>
-	public ValidationResultDetails GetProblemDetails()
+	public ValidationResultDetails GetProblemDetails() => GetProblemDetails(null);
+
+	/// <summary>
+	/// Copies data to a structure similar to the validation problem details defined in RFC 9457
+	/// </summary>
+	/// <param name="namingPolicy">
+	/// Naming policy used for the <see cref="ValidationErrorDetail.Pointer"/> segments of properties without an explicit JSON name ([JsonPropertyName]).
+	/// </param>
+	/// <returns></returns>
+	public ValidationResultDetails GetProblemDetails(PropertyNamingPolicy? namingPolicy)
 	{
 		return new ValidationResultDetails
 		{
@@ -94,7 +104,7 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 						Detail = error.Message,
 						ResourceKey = error.ResourceKey,
 						Args = error.Args,
-						Pointer = $"#{prop.PropertyPath}",
+						Pointer = $"#/{prop.GetJsonPointerPath(namingPolicy)}",
 						FieldName = prop.PropertyDisplayName,
 					})
 				)
@@ -116,7 +126,16 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 	/// Generates JSON matching the validation problem details defined in RFC 9457
 	/// </summary>
 	/// <returns></returns>
-	public string GetProblemDetailsJson()
+	public string GetProblemDetailsJson() => GetProblemDetailsJson(null);
+
+	/// <summary>
+	/// Generates JSON matching the validation problem details defined in RFC 9457
+	/// </summary>
+	/// <param name="namingPolicy">
+	/// Naming policy used for the "pointer" segments of properties without an explicit JSON name ([JsonPropertyName]).
+	/// </param>
+	/// <returns></returns>
+	public string GetProblemDetailsJson(PropertyNamingPolicy? namingPolicy)
 	{
 		// Create StringBuilder with estimated size
 		var sb = new StringBuilder(180 + 200 * PropertiesResultCollection.Count + 200 * GlobalMessages.Count);
@@ -128,8 +147,8 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 			sb.AppendLine(
 				$$"""
 				    {
-				      "detail": "{{error.Message}}",
-				      "resourceKey": "{{error.ResourceKey}}",
+				      "detail": "{{JsonEscaper.Escape(error.Message)}}",
+				      "resourceKey": "{{JsonEscaper.Escape(error.ResourceKey)}}",
 				      "args": [{{error.ArgsJson}}],
 				      "pointer": "#"
 				    },
@@ -141,6 +160,14 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 		{
 			PropertyValidationResult prop = PropertiesResultCollection.ArrayBuffer[index];
 
+			if (prop.Messages.Count == 0)
+			{
+				continue;
+			}
+
+			string pointer = JsonEscaper.Escape(prop.GetJsonPointerPath(namingPolicy));
+			string fieldName = JsonEscaper.Escape(prop.PropertyDisplayName);
+
 			for (int messageIndex = 0; messageIndex < prop.Messages.Count; messageIndex++)
 			{
 				ValidationMessage error = prop.Messages[messageIndex];
@@ -148,11 +175,11 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 				sb.AppendLine(
 					$$"""
 					    {
-					      "detail": "{{error.Message}}",
-					      "resourceKey": "{{error.ResourceKey}}",
+					      "detail": "{{JsonEscaper.Escape(error.Message)}}",
+					      "resourceKey": "{{JsonEscaper.Escape(error.ResourceKey)}}",
 					      "args": [{{error.ArgsJson}}],
-					      "pointer": "#/{{prop.PropertyPath}}",
-					      "fieldName": "{{prop.PropertyDisplayName}}"
+					      "pointer": "#/{{pointer}}",
+					      "fieldName": "{{fieldName}}"
 					    },
 					"""
 				);
@@ -177,7 +204,17 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 	/// <inheritdoc />
 	IExpandablePropertyValidationResult IInternalValidationResult.InitProperty(string name, string? displayName)
 	{
-		return PropertiesResultCollection.InitProperty(name, displayName ?? name);
+		return PropertiesResultCollection.InitProperty(name, displayName ?? name, null);
+	}
+
+	/// <inheritdoc />
+	IExpandablePropertyValidationResult IInternalValidationResult.InitProperty(
+		string name,
+		string? displayName,
+		string? jsonName
+	)
+	{
+		return PropertiesResultCollection.InitProperty(name, displayName ?? name, jsonName);
 	}
 
 	/// <summary>
@@ -239,19 +276,23 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 
 	void IInternalValidationResult.Combine(ValidationResult result)
 	{
-		// TODO: How about some CopyTo method? And what about result.GlobalMessages reset? (Cuz we reset result.PropertiesResultCollection but not the GlobalMessages)
-		// POP all messages from the result and add them to the current result
+		// Copy all messages from the result and add them to the current result
 		for (int index = 0; index < result.GlobalMessages.Count; index++)
 		{
 			ValidationMessage message = result.GlobalMessages[index];
 			AddGlobalMessageToArray(message);
 		}
 
-		// Concat properties
+		// Copy properties; property results are never moved between pooled collections
 		PropertiesResultCollection.Concat(result.PropertiesResultCollection);
 	}
 
 	void IInternalValidationResult.CombineNested(ValidationResult result, string propertyName)
+	{
+		((IInternalValidationResult)this).CombineNested(result, propertyName, null);
+	}
+
+	void IInternalValidationResult.CombineNested(ValidationResult result, string propertyName, string? propertyJsonName)
 	{
 		// POP all messages from the result and add them to the current result
 		for (int index = 0; index < result.GlobalMessages.Count; index++)
@@ -260,17 +301,59 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 			AddGlobalMessageToArray(message);
 		}
 
-		// POP all properties from the result and add them to the current result
+		// Copy all properties from the result to the current result; nested paths are prefixed by the property name,
+		// so they cannot collide with the existing ones (no lookup). The property results of the nested result
+		// stay owned by its (pooled) collection, so they are not shared with this result.
 		for (int index = 0; index < result.PropertiesResultCollection.Count; index++)
 		{
 			PropertyValidationResult propertyResult = result.PropertiesResultCollection[index];
-			((IInternalPropertyValidationResult)propertyResult).AsNestedPropertyValidationResult(propertyName);
-			// result.PropertiesResultCollection[index] = null!;
-			PropertiesResultCollection.Add(propertyResult);
+			PropertiesResultCollection.AddCopy(propertyResult, propertyName, propertyJsonName, findExisting: false);
+		}
+	}
+
+	void IInternalValidationResult.CombineCollectionItem(
+		ValidationResult itemResult,
+		string propertyName,
+		string? propertyJsonName,
+		int index
+	)
+	{
+		string indexName = IndexNames.Get(index);
+
+		// Global messages of the item (e.g. from its AfterValidate) belong to the item itself
+		if (itemResult.GlobalMessages.Count != 0)
+		{
+			var itemPropertyResult = PropertiesResultCollection.InitProperty(
+				$"{propertyName}/{indexName}",
+				$"{propertyName}[{indexName}]",
+				null
+			);
+			itemPropertyResult.SetPath(
+				itemPropertyResult.PropertyPath,
+				indexName,
+				// Index is used as it is; the naming policy does not apply
+				indexName,
+				new PropertyPathSegment(propertyName, propertyJsonName, null)
+			);
+
+			var expandable = (IExpandablePropertyValidationResult)itemPropertyResult;
+
+			for (int messageIndex = 0; messageIndex < itemResult.GlobalMessages.Count; messageIndex++)
+			{
+				expandable.Add(itemResult.GlobalMessages[messageIndex]);
+			}
 		}
 
-		// // Reset count
-		// result.PropertiesResultCollection.Count = 0;
+		for (int propertyIndex = 0; propertyIndex < itemResult.PropertiesResultCollection.Count; propertyIndex++)
+		{
+			PropertiesResultCollection.AddCopy(
+				itemResult.PropertiesResultCollection[propertyIndex],
+				propertyName,
+				propertyJsonName,
+				findExisting: false,
+				indexName
+			);
+		}
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]

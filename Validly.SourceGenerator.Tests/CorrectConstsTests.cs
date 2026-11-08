@@ -16,6 +16,10 @@ public class CorrectConstsTests
 		Assert.Equal(Consts.ValidationResultQualifiedName, $"Validly.{nameof(ValidationResult)}");
 		Assert.Equal(Consts.ExtendableValidationResultQualifiedName, $"Validly.{nameof(ExtendableValidationResult)}");
 		Assert.Equal(
+			Consts.JsonPropertyNameAttributeQualifiedName,
+			typeof(System.Text.Json.Serialization.JsonPropertyNameAttribute).FullName
+		);
+		Assert.Equal(
 			Consts.InternalValidationInvokerGlobalRef,
 			$"global::Validly.Validators.{nameof(IInternalValidationInvoker)}"
 		);

@@ -27,6 +27,11 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	private bool _disposed = true;
 
 	/// <summary>
+	/// True when the arrays are rented from the pools (and must be returned); false for user-provided arrays
+	/// </summary>
+	private bool _pooled;
+
+	/// <summary>
 	/// Array of all properties results
 	/// </summary>
 	/// <remarks>
@@ -88,6 +93,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	{
 		// Users/developer can use this Ctor; this ctor creates instance that should work without pooling
 		_propertiesResult = properties;
+		_count = properties.Length;
 		_disposed = false;
 	}
 
@@ -99,26 +105,36 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	internal void Reset(int propertiesCount, int messagesPerProperty)
 	{
 		_disposed = false;
+		_pooled = true;
 		_messagesPerProperty = messagesPerProperty;
 		_messages = ValidationMessagePool.Rent(propertiesCount * messagesPerProperty);
 		_propertiesResult = PropertyValidationResultPool.Rent(propertiesCount);
 		_count = 0;
 	}
 
-	internal PropertyValidationResult InitProperty(string name, string displayName)
+	internal PropertyValidationResult InitProperty(string name, string displayName, string? jsonName)
 	{
+		if (_count >= _propertiesResult.Length)
+		{
+			throw new InvalidOperationException(
+				"Collection is full. You probably created result for non-existing property."
+			);
+		}
+
+		// PropertyValidationResult objects are owned by the pooled array they live in; they are never shared
+		// with another collection (results are copied between collections), so they can be safely reused.
 		var propertyResult = _propertiesResult[_count++] ??=
 			// ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
 			new PropertyValidationResult();
 
 		int start = (_count - 1) * _messagesPerProperty;
-		propertyResult.ResetProperty(name, displayName, _messages, start, start + _messagesPerProperty, 0);
+		propertyResult.ResetProperty(name, displayName, jsonName, _messages, start, start + _messagesPerProperty, 0);
 
 		return propertyResult;
 	}
 
 	/// <summary>
-	/// Concat this collection with another one. Items from the other collection are added to the end of this collection.
+	/// Concat this collection with another one. Items from the other collection are copied to the end of this collection.
 	/// </summary>
 	/// <param name="collection"></param>
 	/// <returns></returns>
@@ -129,13 +145,11 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 			throw new InvalidOperationException();
 		}
 
-		for (int index = 0; index < collection._count && _count < _messages.Length; index++)
+		for (int index = 0; index < collection._count; index++)
 		{
-			_propertiesResult[_count++] = collection._propertiesResult[index];
+			PropertyValidationResult source = collection._propertiesResult[index];
+			AddCopy(source, null, null, findExisting: false);
 		}
-
-		// Reset counts of original collection
-		collection._count = 0;
 
 		return this;
 	}
@@ -143,21 +157,31 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	/// <summary>
 	/// Add property validation result to the collection
 	/// </summary>
+	/// <remarks>
+	/// Messages of a property with the same path are merged into the existing property result.
+	/// For pooled collections, the result is copied, so the passed instance is not referenced by the collection.
+	/// </remarks>
 	/// <param name="propertyValidationResult"></param>
 	/// <exception cref="InvalidOperationException"></exception>
 	public void Add(PropertyValidationResult propertyValidationResult)
 	{
-		if (_count >= _propertiesResult.Length)
+		if (_pooled)
 		{
-			throw new InvalidOperationException(
-				"Collection is full. You probably created result for non-existing property."
-			);
+			AddCopy(propertyValidationResult, null, null, findExisting: true);
+			return;
 		}
 
 		var existingPropertyResult = FindProperty(propertyValidationResult.PropertyPath);
 
 		if (existingPropertyResult is null)
 		{
+			if (_count >= _propertiesResult.Length)
+			{
+				throw new InvalidOperationException(
+					"Collection is full. You probably created result for non-existing property."
+				);
+			}
+
 			_propertiesResult[_count++] = propertyValidationResult;
 			return;
 		}
@@ -167,6 +191,44 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 		foreach (var message in propertyValidationResult.Messages)
 		{
 			expandable.Add(message);
+		}
+	}
+
+	/// <summary>
+	/// Copy the property result (its messages) into a property result owned by this collection
+	/// </summary>
+	/// <param name="source">Property result to copy; it is not referenced by this collection afterward</param>
+	/// <param name="parentPropertyName">Parent property the source is nested under; null to keep the path</param>
+	/// <param name="parentPropertyJsonName">Explicit JSON name of the parent property</param>
+	/// <param name="findExisting">Merge messages into an existing property result with the same path</param>
+	/// <param name="indexName">Index of the collection item, nested under the parent property</param>
+	internal void AddCopy(
+		PropertyValidationResult source,
+		string? parentPropertyName,
+		string? parentPropertyJsonName,
+		bool findExisting,
+		string? indexName = null
+	)
+	{
+		PropertyValidationResult? target = null;
+
+		if (findExisting)
+		{
+			target = FindProperty(PropertyValidationResult.CreateNestedPath(source, parentPropertyName, indexName));
+		}
+
+		if (target is null)
+		{
+			target = InitProperty(source.PropertyPath, source.PropertyDisplayName, null);
+			target.CopyPathFrom(source, parentPropertyName, parentPropertyJsonName, indexName);
+		}
+
+		IReadOnlyList<ValidationMessage> messages = source.Messages;
+		var expandable = (IExpandablePropertyValidationResult)target;
+
+		for (int index = 0; index < messages.Count; index++)
+		{
+			expandable.Add(messages[index]);
 		}
 	}
 
@@ -207,7 +269,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	{
 		get
 		{
-			if (index < 0 || index > _count)
+			if (index < 0 || index >= _count)
 			{
 				throw new IndexOutOfRangeException();
 			}
@@ -224,6 +286,17 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 			return;
 		}
 
+		_disposed = true;
+		_count = 0;
+
+		// User-provided arrays must not get into the shared pools
+		if (!_pooled)
+		{
+			return;
+		}
+
+		_pooled = false;
+
 		// ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 		if (_messages is not null)
 		{
@@ -233,9 +306,14 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 		// ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 		if (_propertiesResult is not null)
 		{
+			// Not cleared on purpose; PropertyValidationResult objects are reused by the next renter.
+			// They are owned by this array only, results are always copied between collections.
 			PropertyValidationResultPool.Return(_propertiesResult, clearArray: false);
 		}
 
-		_disposed = true;
+		// ReSharper disable UseCollectionExpression
+		_messages = Array.Empty<ValidationMessage>();
+		_propertiesResult = Array.Empty<PropertyValidationResult>();
+		// ReSharper restore UseCollectionExpression
 	}
 }

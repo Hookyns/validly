@@ -39,6 +39,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validly.Extensions.AspNetCo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validly.SourceGenerator.Tests", "Validly.SourceGenerator.Tests\Validly.SourceGenerator.Tests.csproj", "{0E99C25B-354F-4717-9699-E30A9D3D498C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validly.Tests.CompileTimeNaming", "Validly.Tests.CompileTimeNaming\Validly.Tests.CompileTimeNaming.csproj", "{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5101}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validly.Tests.DetectedNaming", "Validly.Tests.DetectedNaming\Validly.Tests.DetectedNaming.csproj", "{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5102}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +89,14 @@ Global
 		{0E99C25B-354F-4717-9699-E30A9D3D498C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E99C25B-354F-4717-9699-E30A9D3D498C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E99C25B-354F-4717-9699-E30A9D3D498C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5101}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5101}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5101}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5101}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5102}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5102}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5102}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1C1D5E2-6C41-4F2B-9C18-7B4E3D9A5102}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{056F16FC-A505-4849-8F47-D8583A5A6A13} = {E8AB26F1-6562-4531-B516-2457130E6B5B}

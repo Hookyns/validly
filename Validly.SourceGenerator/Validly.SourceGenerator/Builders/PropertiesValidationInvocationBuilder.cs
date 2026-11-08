@@ -1,6 +1,10 @@
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
+using Validly.Naming;
 using Validly.SourceGenerator.Dtos;
+using Validly.SourceGenerator.Utils;
 using Validly.SourceGenerator.Utils.Mapping;
+using Validly.SourceGenerator.Utils.SourceTexts;
 
 namespace Validly.SourceGenerator.Builders;
 
@@ -11,8 +15,9 @@ internal class PropertiesValidationInvocationBuilder
 	private readonly string _ruleClassName;
 	private readonly DependenciesTracker _dependenciesTracker;
 	private readonly bool _exitEarly;
+	private readonly ValidlyNamingPolicy _namingPolicy;
 
-	private readonly List<string> _invocations = new();
+	private readonly List<Func<bool, string>> _invocations = new();
 
 	/// <summary>
 	/// List of validation calls for the custom validation methods.
@@ -22,19 +27,20 @@ internal class PropertiesValidationInvocationBuilder
 	public PropertiesValidationInvocationBuilder(
 		string ruleClassName,
 		DependenciesTracker dependenciesTracker,
-		bool exitEarly
+		bool exitEarly,
+		ValidlyNamingPolicy namingPolicy
 	)
 	{
 		_ruleClassName = ruleClassName;
 		_dependenciesTracker = dependenciesTracker;
 		_exitEarly = exitEarly;
+		_namingPolicy = namingPolicy;
 	}
 
 	public void AddInvocationForProperty(
 		PropertyProperties properties,
 		IList<(AttributeProperties, ValidatorProperties)> validators,
-		CallsCollection propertyCalls,
-		bool isAsync
+		CallsCollection propertyCalls
 	)
 	{
 		string ruleName = $"{properties.PropertyName}Rule";
@@ -70,32 +76,54 @@ internal class PropertiesValidationInvocationBuilder
 			return;
 		}
 
+		// Rendered in Build(), when it is known whether the generated method is async
+		int invocationIndex = _invocations.Count;
+		_invocations.Add(isAsync => BuildInvocation(properties, propertyCalls, invocationIndex, isAsync));
+	}
+
+	private string BuildInvocation(
+		PropertyProperties properties,
+		CallsCollection propertyCalls,
+		int invocationIndex,
+		bool isAsync
+	)
+	{
+		var propertyNameLiteral = SymbolDisplay.FormatLiteral(properties.PropertyName, true);
 		var propertyNameAndDisplayNameArgs =
 			properties.PropertyName == properties.DisplayName
-				? $"\"{properties.PropertyName}\""
-				: $"\"{properties.PropertyName}\", \"{properties.DisplayName}\"";
+				? propertyNameLiteral
+				: $"{propertyNameLiteral}, {SymbolDisplay.FormatLiteral(properties.DisplayName, true)}";
 
+		// The JSON name is resolved at compile time whenever possible; null means the runtime has to do it
+		string? jsonName = JsonNameResolver.Resolve(properties, _namingPolicy);
+
+		var initPropertyArgs =
+			jsonName is null ? propertyNameAndDisplayNameArgs
+			: properties.PropertyName == properties.DisplayName
+				? $"{propertyNameLiteral}, null, {SymbolDisplay.FormatLiteral(jsonName, true)}"
+			: $"{propertyNameAndDisplayNameArgs}, {SymbolDisplay.FormatLiteral(jsonName, true)}";
+
+		var resultReturn = ReturnStatement.CreateForResult(isAsync);
 		var sb = new StringBuilder();
 
 		// ValidationResults
 		if (propertyCalls.ValidationResults.Count != 0)
 		{
+			int resultIndex = 0;
+
 			foreach (ValidatorCallInfo call in propertyCalls.ValidationResults)
 			{
+				// Unique name; invocations of all the properties share one scope
+				string variableName = $"propertyValidationResult{invocationIndex}_{resultIndex++}";
+
 				sb.AppendLine(
 					$"""
-					var propertyValidationResult = {call.Call};
-					if (propertyValidationResult != null) return propertyValidationResult;
+					var {variableName} = {call.Call};
+					if ({variableName} != null) {ReturnStatement.Create(variableName, isAsync)}
 					"""
 				);
 			}
 		}
-
-		var anyAsync = propertyCalls.AnyAsync() || isAsync;
-
-		var resultReturn = anyAsync
-			? $"new ValueTask<{Consts.ValidationResultGlobalRef}>(({Consts.ValidationResultGlobalRef})result)"
-			: $"({Consts.ValidationResultGlobalRef})result";
 
 		if (propertyCalls.Voids.Count != 0)
 		{
@@ -125,7 +153,7 @@ internal class PropertiesValidationInvocationBuilder
 
 				if (_exitEarly)
 				{
-					sb.AppendLine($"if (!propertyResult.IsSuccess) return ({Consts.ValidationResultGlobalRef})result;");
+					sb.AppendLine($"if (!propertyResult.IsSuccess) {resultReturn}");
 				}
 			}
 		}
@@ -146,19 +174,17 @@ internal class PropertiesValidationInvocationBuilder
 
 				if (_exitEarly)
 				{
-					sb.AppendLine($"if (!propertyResult.IsSuccess) return ({Consts.ValidationResultGlobalRef})result;");
+					sb.AppendLine($"if (!propertyResult.IsSuccess) {resultReturn}");
 				}
 			}
 		}
 
-		_invocations.Add(
-			$$"""
+		return $$"""
 			// Validate "{{properties.PropertyName}}" property
 			context.SetProperty({{propertyNameAndDisplayNameArgs}});
-			propertyResult = result.InitProperty({{propertyNameAndDisplayNameArgs}});
+			propertyResult = result.InitProperty({{initPropertyArgs}});
 			{{sb}}
-			"""
-		);
+			""";
 	}
 
 	private static void AppendSyncCalls(
@@ -174,12 +200,17 @@ internal class PropertiesValidationInvocationBuilder
 
 			if (exitEarly)
 			{
-				sb.AppendLine($"if (!propertyResult.IsSuccess) return {resultReturn};");
+				sb.AppendLine($"if (!propertyResult.IsSuccess) {resultReturn}");
 			}
 		}
 	}
 
-	public string Build()
+	/// <summary>
+	/// Builds the invocations of all the properties
+	/// </summary>
+	/// <param name="isAsync">Whether the generated ValidateAsync method is async</param>
+	/// <returns></returns>
+	public string Build(bool isAsync)
 	{
 		if (_invocations.Count == 0)
 		{
@@ -190,7 +221,7 @@ internal class PropertiesValidationInvocationBuilder
 
 			{Consts.ExpandablePropertyValidationResultGlobalRef} propertyResult;
 
-			{string.Join(InvocationsDelimiter, _invocations)}
+			{string.Join(InvocationsDelimiter, _invocations.Select(invocation => invocation(isAsync)))}
 
 			""";
 	}

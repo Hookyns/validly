@@ -1,3 +1,5 @@
+using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Validly.Utils;
@@ -23,17 +25,50 @@ internal static class JsonEscaper
 			return string.Empty;
 		}
 
-		for (int index = 0; index < value!.Length; index++)
+		return NeedsEscaping(value!) ? EscapeCore(value!) : value!;
+	}
+
+	/// <summary>
+	/// Detects the quote, the backslash and the control characters; vectorized when supported
+	/// </summary>
+	private static bool NeedsEscaping(string value)
+	{
+		ReadOnlySpan<ushort> characters = MemoryMarshal.Cast<char, ushort>(value.AsSpan());
+		int index = 0;
+
+		if (Vector.IsHardwareAccelerated && characters.Length >= Vector<ushort>.Count)
 		{
-			char character = value[index];
+			var space = new Vector<ushort>(' ');
+			var quote = new Vector<ushort>('"');
+			var backslash = new Vector<ushort>('\\');
+			ReadOnlySpan<Vector<ushort>> vectors = MemoryMarshal.Cast<ushort, Vector<ushort>>(characters);
+
+			for (int vectorIndex = 0; vectorIndex < vectors.Length; vectorIndex++)
+			{
+				Vector<ushort> vector = vectors[vectorIndex];
+				Vector<ushort> matches =
+					Vector.LessThan(vector, space) | Vector.Equals(vector, quote) | Vector.Equals(vector, backslash);
+
+				if (matches != Vector<ushort>.Zero)
+				{
+					return true;
+				}
+			}
+
+			index = vectors.Length * Vector<ushort>.Count;
+		}
+
+		for (; index < characters.Length; index++)
+		{
+			ushort character = characters[index];
 
 			if (character < ' ' || character == '"' || character == '\\')
 			{
-				return EscapeCore(value);
+				return true;
 			}
 		}
 
-		return value;
+		return false;
 	}
 
 	private static string EscapeCore(string value)

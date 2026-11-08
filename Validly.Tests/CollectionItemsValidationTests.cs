@@ -221,6 +221,11 @@ public class CollectionItemsValidationTests
 			["Order/Lines/1/ProductCode", "Order/Lines/1/Quantity", "Order/Lines/2"],
 			result.Properties.Where(p => !p.IsSuccess).Select(p => p.PropertyPath)
 		);
+
+		Assert.Equal(
+			["order/lines/1/productCode", "order/lines/1/quantity", "order/lines/2"],
+			result.Properties.Where(p => !p.IsSuccess).Select(p => p.GetJsonPointerPath(PropertyNamingPolicy.CamelCase))
+		);
 	}
 
 	[Fact]

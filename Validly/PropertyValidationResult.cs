@@ -1,5 +1,5 @@
 using System.Text;
-using System.Text.Json;
+using Validly.Naming;
 using Validly.Utils;
 
 namespace Validly;
@@ -130,13 +130,23 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	/// </remarks>
 	/// <param name="namingPolicy">Naming policy applied to properties without an explicit JSON name</param>
 	/// <returns></returns>
-	public string GetJsonPointerPath(JsonNamingPolicy? namingPolicy = null)
+	public string GetJsonPointerPath(PropertyNamingPolicy? namingPolicy = null)
 	{
 		string leaf = EscapeJsonPointerSegment(ResolveJsonName(_propertyName, _propertyJsonName, namingPolicy));
 
 		if (_parentSegments is null)
 		{
 			return leaf;
+		}
+
+		// One level of nesting is the common case; concat it directly instead of using a StringBuilder
+		if (_parentSegments.Next is null)
+		{
+			return string.Concat(
+				EscapeJsonPointerSegment(ResolveJsonName(_parentSegments.Name, _parentSegments.JsonName, namingPolicy)),
+				"/",
+				leaf
+			);
 		}
 
 		var sb = new StringBuilder();
@@ -150,7 +160,7 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 		return sb.Append(leaf).ToString();
 	}
 
-	private static string ResolveJsonName(string name, string? jsonName, JsonNamingPolicy? namingPolicy)
+	private static string ResolveJsonName(string name, string? jsonName, PropertyNamingPolicy? namingPolicy)
 	{
 		return jsonName ?? namingPolicy?.ConvertName(name) ?? name;
 	}

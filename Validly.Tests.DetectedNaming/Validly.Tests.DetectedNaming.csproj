@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<!-- No JsonNamingPolicy here on purpose; the generator detects the policy configured in the code -->
+		<ValidlyConfiguration>
+			<AutoRequired>disable</AutoRequired>
+			<AutoInEnum>disable</AutoInEnum>
+		</ValidlyConfiguration>
+	</PropertyGroup>
+	<ItemGroup>
+		<CompilerVisibleProperty Include="ValidlyConfiguration" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+		<PackageReference Include="xunit" Version="2.5.3" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+	</ItemGroup>
+	<ItemGroup>
+		<Using Include="Xunit" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Validly.Extensions.Validators\Validly.Extensions.Validators.csproj" />
+		<ProjectReference Include="..\Validly\Validly.csproj" />
+		<ProjectReference
+			Include="..\Validly.SourceGenerator\Validly.SourceGenerator\Validly.SourceGenerator.csproj"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+		/>
+	</ItemGroup>
+</Project>

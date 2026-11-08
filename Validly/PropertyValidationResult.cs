@@ -31,6 +31,17 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	private PropertyPathSegment? _parentSegments;
 
 	/// <summary>
+	/// The outermost parent property, not materialized into <see cref="_parentSegments"/> yet.
+	/// One level of nesting (the common case) then does not allocate a segment.
+	/// </summary>
+	private string? _pendingParentName;
+
+	/// <summary>
+	/// Explicit JSON name of <see cref="_pendingParentName"/>
+	/// </summary>
+	private string? _pendingParentJsonName;
+
+	/// <summary>
 	/// Path of the validated property from the root object
 	/// </summary>
 	public string PropertyPath { get; private set; }
@@ -104,6 +115,8 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 		_propertyName = propertyPath;
 		_propertyJsonName = propertyJsonName;
 		_parentSegments = null;
+		_pendingParentName = null;
+		_pendingParentJsonName = null;
 		_messages.Reset(messages, messagesStartPosition, messagesEndPosition, messagesCount);
 	}
 
@@ -120,17 +133,18 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	public string GetJsonPointerPath(PropertyNamingPolicy? namingPolicy = null)
 	{
 		string leaf = EscapeJsonPointerSegment(ResolveJsonName(_propertyName, _propertyJsonName, namingPolicy));
+		PropertyPathSegment? parentSegments = GetParentSegments();
 
-		if (_parentSegments is null)
+		if (parentSegments is null)
 		{
 			return leaf;
 		}
 
 		// One level of nesting is the common case; concat it directly instead of using a StringBuilder
-		if (_parentSegments.Next is null)
+		if (parentSegments.Next is null)
 		{
 			return string.Concat(
-				EscapeJsonPointerSegment(ResolveJsonName(_parentSegments.Name, _parentSegments.JsonName, namingPolicy)),
+				EscapeJsonPointerSegment(ResolveJsonName(parentSegments.Name, parentSegments.JsonName, namingPolicy)),
 				"/",
 				leaf
 			);
@@ -138,7 +152,7 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 
 		var sb = new StringBuilder();
 
-		for (PropertyPathSegment? segment = _parentSegments; segment is not null; segment = segment.Next)
+		for (PropertyPathSegment? segment = parentSegments; segment is not null; segment = segment.Next)
 		{
 			sb.Append(EscapeJsonPointerSegment(ResolveJsonName(segment.Name, segment.JsonName, namingPolicy)));
 			sb.Append('/');
@@ -351,7 +365,24 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	)
 	{
 		PropertyPath = $"{parentPropertyName}/{PropertyPath}";
-		_parentSegments = new PropertyPathSegment(parentPropertyName, parentPropertyJsonName, _parentSegments);
+		_parentSegments = GetParentSegments();
+		_pendingParentName = parentPropertyName;
+		_pendingParentJsonName = parentPropertyJsonName;
 		return this;
+	}
+
+	/// <summary>
+	/// Parent segments of the path, linked from the root; the pending parent is materialized
+	/// </summary>
+	private PropertyPathSegment? GetParentSegments()
+	{
+		if (_pendingParentName is not null)
+		{
+			_parentSegments = new PropertyPathSegment(_pendingParentName, _pendingParentJsonName, _parentSegments);
+			_pendingParentName = null;
+			_pendingParentJsonName = null;
+		}
+
+		return _parentSegments;
 	}
 }

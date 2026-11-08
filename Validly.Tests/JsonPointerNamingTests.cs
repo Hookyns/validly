@@ -179,3 +179,28 @@ public class ProblemDetailsJsonEscapingTests
 		Assert.Equal("#/bell\u0007form\u000Cfeed\u0001", pointer);
 	}
 }
+
+[Validatable]
+partial class LongMessageObject
+{
+	[Validly.Validators.CustomValidation]
+	public string? Value { get; set; }
+
+	public ValidationMessage? ValidateValue() => new(Value!, "Long.Message");
+}
+
+public class ProblemDetailsJsonLongStringEscapingTests
+{
+	[Theory]
+	[InlineData("A long validation message without anything special in it, at all.")]
+	[InlineData("A long validation message with a \"quote\" placed after the first vector.")]
+	[InlineData("A long validation message with a backslash \\ placed after the first vector.")]
+	[InlineData("A long validation message with a control character \u0001 after the first vector.")]
+	public void LongMessages_AreEscaped(string message)
+	{
+		using var result = new LongMessageObject { Value = message }.Validate();
+
+		using var document = JsonDocument.Parse(result.GetProblemDetailsJson());
+		Assert.Equal(message, document.RootElement.GetProperty("errors")[0].GetProperty("detail").GetString());
+	}
+}

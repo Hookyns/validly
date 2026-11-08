@@ -301,12 +301,13 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 			AddGlobalMessageToArray(message);
 		}
 
-		// Copy all properties from the result to the current result; the property results of the nested result
+		// Copy all properties from the result to the current result; nested paths are prefixed by the property name,
+		// so they cannot collide with the existing ones (no lookup). The property results of the nested result
 		// stay owned by its (pooled) collection, so they are not shared with this result.
 		for (int index = 0; index < result.PropertiesResultCollection.Count; index++)
 		{
 			PropertyValidationResult propertyResult = result.PropertiesResultCollection[index];
-			PropertiesResultCollection.AddCopy(propertyResult, propertyName, propertyJsonName, findExisting: true);
+			PropertiesResultCollection.AddCopy(propertyResult, propertyName, propertyJsonName, findExisting: false);
 		}
 	}
 

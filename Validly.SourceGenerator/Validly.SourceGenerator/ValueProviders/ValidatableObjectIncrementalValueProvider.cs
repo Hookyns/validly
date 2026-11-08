@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Validly.SourceGenerator.Dtos;
 using Validly.SourceGenerator.Utils;
@@ -185,7 +186,10 @@ internal static class ValidatableObjectIncrementalValueProvider
 			max--;
 		}
 
-		var usings = target is CompilationUnitSyntax cus ? cus.Usings.ToArray() : Array.Empty<UsingDirectiveSyntax>();
+		// Global usings apply to the whole compilation already; copying them would produce invalid code
+		var usings = target is CompilationUnitSyntax cus
+			? cus.Usings.Where(static usingSyntax => usingSyntax.GlobalKeyword.IsKind(SyntaxKind.None)).ToArray()
+			: Array.Empty<UsingDirectiveSyntax>();
 		return usings;
 	}
 }

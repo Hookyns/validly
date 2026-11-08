@@ -21,6 +21,11 @@ public record ValidlyConfiguration
 	public required bool ExitEarly { get; init; }
 
 	/// <summary>
+	/// When enabled (default), items of collections of validatable objects are validated
+	/// </summary>
+	public bool ValidateCollectionItems { get; init; } = true;
+
+	/// <summary>
 	/// Naming policy used for the JSON names of the properties.
 	/// Null means it is not configured; the generator then tries to detect it in the compilation.
 	/// </summary>

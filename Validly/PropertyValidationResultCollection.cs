@@ -201,26 +201,26 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	/// <param name="parentPropertyName">Parent property the source is nested under; null to keep the path</param>
 	/// <param name="parentPropertyJsonName">Explicit JSON name of the parent property</param>
 	/// <param name="findExisting">Merge messages into an existing property result with the same path</param>
+	/// <param name="indexName">Index of the collection item, nested under the parent property</param>
 	internal void AddCopy(
 		PropertyValidationResult source,
 		string? parentPropertyName,
 		string? parentPropertyJsonName,
-		bool findExisting
+		bool findExisting,
+		string? indexName = null
 	)
 	{
 		PropertyValidationResult? target = null;
 
 		if (findExisting)
 		{
-			target = FindProperty(
-				parentPropertyName is null ? source.PropertyPath : $"{parentPropertyName}/{source.PropertyPath}"
-			);
+			target = FindProperty(PropertyValidationResult.CreateNestedPath(source, parentPropertyName, indexName));
 		}
 
 		if (target is null)
 		{
 			target = InitProperty(source.PropertyPath, source.PropertyDisplayName, null);
-			target.CopyPathFrom(source, parentPropertyName, parentPropertyJsonName);
+			target.CopyPathFrom(source, parentPropertyName, parentPropertyJsonName, indexName);
 		}
 
 		IReadOnlyList<ValidationMessage> messages = source.Messages;

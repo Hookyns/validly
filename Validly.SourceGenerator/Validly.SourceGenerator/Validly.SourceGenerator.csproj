@@ -7,6 +7,9 @@
 		<LangVersion>12</LangVersion>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		<IsRoslynComponent>true</IsRoslynComponent>
+		<!-- The generator is shipped only as an analyzer; it must not become a compile reference of the consumers -->
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
 		<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
 		<PackageId>Validly.SourceGenerator</PackageId>
 		<Version>1.3.0</Version>
@@ -44,7 +47,7 @@
 	<!--	</ItemGroup>-->
 	<ItemGroup>
 		<PackageReference Include="JetBrains.Annotations" Version="2025.2.4" PrivateAssets="all" />
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="[4.14.0,)" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
 		<PackageReference Include="PolySharp" Version="1.15.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; analyzers; buildtransitive</IncludeAssets>

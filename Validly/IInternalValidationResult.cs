@@ -76,4 +76,14 @@ public interface IInternalValidationResult
 	/// <param name="propertyName">Name of the property from which the result comes from.</param>
 	/// <param name="propertyJsonName">Explicit JSON name of the property (from [JsonPropertyName]).</param>
 	void CombineNested(ValidationResult result, string propertyName, string? propertyJsonName);
+
+	/// <summary>
+	/// Combine the result of a collection item. Property results are nested under the collection property and
+	/// the index of the item (e.g. Lines/1/ProductCode); global messages of the item belong to the item (Lines/1).
+	/// </summary>
+	/// <param name="itemResult">Validation result of the item</param>
+	/// <param name="propertyName">Name of the collection property</param>
+	/// <param name="propertyJsonName">Explicit JSON name of the collection property</param>
+	/// <param name="index">Index of the item in the collection</param>
+	void CombineCollectionItem(ValidationResult itemResult, string propertyName, string? propertyJsonName, int index);
 }

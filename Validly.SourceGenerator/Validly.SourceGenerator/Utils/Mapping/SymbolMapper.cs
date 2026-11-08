@@ -121,7 +121,56 @@ internal static class SymbolMapper
 				.Type.GetAttributes()
 				.Any(attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName),
 			Attributes = new EquatableArray<AttributeProperties>(attributes),
+			CollectionItemsKind = GetCollectionItemsKind(propertySymbol.Type),
+			SkipItemsValidation = attrs.Any(attr =>
+				attr.AttributeClass?.GetQualifiedName() == Consts.SkipItemsValidationAttributeQualifiedName
+			),
 		};
+	}
+
+	/// <summary>
+	/// Detect a collection of validatable objects
+	/// </summary>
+	private static CollectionItemsKind GetCollectionItemsKind(ITypeSymbol type)
+	{
+		if (type is IArrayTypeSymbol arrayType)
+		{
+			return arrayType.Rank == 1 && IsValidatableType(arrayType.ElementType)
+				? CollectionItemsKind.Array
+				: CollectionItemsKind.None;
+		}
+
+		if (type is not INamedTypeSymbol namedType || type.SpecialType == SpecialType.System_String)
+		{
+			return CollectionItemsKind.None;
+		}
+
+		var enumerableType =
+			namedType.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+				? namedType
+				: namedType.AllInterfaces.FirstOrDefault(static i =>
+					i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+				);
+
+		if (enumerableType is null || !IsValidatableType(enumerableType.TypeArguments[0]))
+		{
+			return CollectionItemsKind.None;
+		}
+
+		return namedType.OriginalDefinition.ToDisplayString()
+			is "System.Collections.Generic.List<T>"
+				or "System.Collections.Generic.IList<T>"
+				or "System.Collections.Generic.IReadOnlyList<T>"
+			? CollectionItemsKind.List
+			: CollectionItemsKind.Enumerable;
+	}
+
+	private static bool IsValidatableType(ITypeSymbol type)
+	{
+		return type is INamedTypeSymbol namedType
+			&& namedType
+				.OriginalDefinition.GetAttributes()
+				.Any(static attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName);
 	}
 
 	private static AttributeProperties MapAttribute(AttributeData arg)

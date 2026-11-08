@@ -87,6 +87,26 @@ runtime instead: `Validly.Extensions.AspNetCore` reads it from the configured `J
 `GetProblemDetailsJson` take an optional `PropertyNamingPolicy`. Note that ASP.NET Minimal APIs serialize with
 camelCase by default.
 
+## Nested objects, collections and inheritance
+Properties of a `[Validatable]` type are validated as nested objects (`Address/Street`).
+
+Items of collections of `[Validatable]` objects (arrays, `List<T>`, `IReadOnlyList<T>`, any `IEnumerable<T>`) are
+validated too. Errors carry the index of the item, so the exact value can be pointed at:
+
+| Property path         | JSON pointer              | Error                                       |
+|-----------------------|---------------------------|---------------------------------------------|
+| `Lines/1/ProductCode` | `#/lines/1/productCode`   | Rule of the item's property                 |
+| `Lines/2`             | `#/lines/2`               | Message from the item's `AfterValidate` hook |
+
+Only invalid items are reported; null items are skipped (use `[Required]` / collection validators on the collection
+itself). Opt out per property with `[SkipItemsValidation]`, or for the whole project with
+`<ValidateCollectionItems>disable</ValidateCollectionItems>` in `ValidlyConfiguration`.
+
+A `[Validatable]` class can inherit from another `[Validatable]` class (also through non-validatable classes in
+between). The result of the derived class contains the results of the base class first, followed by its own; the
+`BeforeValidate`/`AfterValidate` hooks of each class are called. When only the derived class requires services
+(`IServiceProvider`), the inherited methods without `IServiceProvider` throw; use the overloads with it.
+
 ## Installation
 Install the package via NuGet:
 ```bash

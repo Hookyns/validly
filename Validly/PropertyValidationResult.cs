@@ -283,20 +283,66 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	/// Take the path of the source property result, optionally nested under the parent property
 	/// </summary>
 	/// <remarks>Path segments are immutable, so they can be shared with the source.</remarks>
-	internal void CopyPathFrom(PropertyValidationResult source, string? parentPropertyName, string? parentPropertyJsonName)
+	internal void CopyPathFrom(
+		PropertyValidationResult source,
+		string? parentPropertyName,
+		string? parentPropertyJsonName,
+		string? indexName = null
+	)
 	{
 		_propertyName = source._propertyName;
 		_propertyJsonName = source._propertyJsonName;
+		PropertyPath = CreateNestedPath(source, parentPropertyName, indexName);
 
-		if (parentPropertyName is null)
+		PropertyPathSegment? segments = source._parentSegments;
+
+		// Index of a collection item is used as it is in the JSON pointer; the naming policy does not apply
+		if (indexName is not null)
 		{
-			PropertyPath = source.PropertyPath;
-			_parentSegments = source._parentSegments;
-			return;
+			segments = new PropertyPathSegment(indexName, indexName, segments);
 		}
 
-		PropertyPath = $"{parentPropertyName}/{source.PropertyPath}";
-		_parentSegments = new PropertyPathSegment(parentPropertyName, parentPropertyJsonName, source._parentSegments);
+		if (parentPropertyName is not null)
+		{
+			segments = new PropertyPathSegment(parentPropertyName, parentPropertyJsonName, segments);
+		}
+
+		_parentSegments = segments;
+	}
+
+	/// <summary>
+	/// Path of the source property result nested under the parent property (and the index of the collection item)
+	/// </summary>
+	internal static string CreateNestedPath(PropertyValidationResult source, string? parentPropertyName, string? indexName)
+	{
+		if (parentPropertyName is null)
+		{
+			return source.PropertyPath;
+		}
+
+		return indexName is null
+			? $"{parentPropertyName}/{source.PropertyPath}"
+			: $"{parentPropertyName}/{indexName}/{source.PropertyPath}";
+	}
+
+	/// <summary>
+	/// Set the path of the property result
+	/// </summary>
+	/// <param name="propertyPath">Full path</param>
+	/// <param name="propertyName">Name of the property (leaf segment)</param>
+	/// <param name="propertyJsonName">Explicit JSON name of the leaf segment</param>
+	/// <param name="parentSegments">Parent segments, linked from the root</param>
+	internal void SetPath(
+		string propertyPath,
+		string propertyName,
+		string? propertyJsonName,
+		PropertyPathSegment? parentSegments
+	)
+	{
+		PropertyPath = propertyPath;
+		_propertyName = propertyName;
+		_propertyJsonName = propertyJsonName;
+		_parentSegments = parentSegments;
 	}
 
 	PropertyValidationResult IInternalPropertyValidationResult.AsNestedPropertyValidationResult(

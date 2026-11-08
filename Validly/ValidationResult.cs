@@ -310,6 +310,51 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 		}
 	}
 
+	void IInternalValidationResult.CombineCollectionItem(
+		ValidationResult itemResult,
+		string propertyName,
+		string? propertyJsonName,
+		int index
+	)
+	{
+		string indexName = IndexNames.Get(index);
+
+		// Global messages of the item (e.g. from its AfterValidate) belong to the item itself
+		if (itemResult.GlobalMessages.Count != 0)
+		{
+			var itemPropertyResult = PropertiesResultCollection.InitProperty(
+				$"{propertyName}/{indexName}",
+				$"{propertyName}[{indexName}]",
+				null
+			);
+			itemPropertyResult.SetPath(
+				itemPropertyResult.PropertyPath,
+				indexName,
+				// Index is used as it is; the naming policy does not apply
+				indexName,
+				new PropertyPathSegment(propertyName, propertyJsonName, null)
+			);
+
+			var expandable = (IExpandablePropertyValidationResult)itemPropertyResult;
+
+			for (int messageIndex = 0; messageIndex < itemResult.GlobalMessages.Count; messageIndex++)
+			{
+				expandable.Add(itemResult.GlobalMessages[messageIndex]);
+			}
+		}
+
+		for (int propertyIndex = 0; propertyIndex < itemResult.PropertiesResultCollection.Count; propertyIndex++)
+		{
+			PropertiesResultCollection.AddCopy(
+				itemResult.PropertiesResultCollection[propertyIndex],
+				propertyName,
+				propertyJsonName,
+				findExisting: false,
+				indexName
+			);
+		}
+	}
+
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private void AddGlobalMessageToArray(ValidationMessage message)
 	{

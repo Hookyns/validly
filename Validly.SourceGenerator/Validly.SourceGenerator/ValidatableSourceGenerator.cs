@@ -283,7 +283,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			|| IsCalledAwaitableHook(obj.BeforeValidateMethod)
 			|| IsCalledAwaitableHook(obj.AfterValidateMethod)
 			// TODO: Can we handle this differently? How should we check if that type is async validator? For now, we force async behavior if there is any property of Validatable type
-			|| obj.Properties.Any(prop => prop.PropertyIsOfValidatableType);
+			|| obj.Properties.Any(prop => prop.PropertyIsOfValidatableType || ValidatesCollectionItems(prop, config));
 
 		return new LevelAnalysis
 		{
@@ -296,6 +296,16 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			InvocationBuilder = invocationBuilder,
 			IsAsync = isAsync,
 		};
+	}
+
+	/// <summary>
+	/// Items of the collection property are validated
+	/// </summary>
+	private static bool ValidatesCollectionItems(PropertyProperties property, ValidlyConfiguration config)
+	{
+		return config.ValidateCollectionItems
+			&& !property.SkipItemsValidation
+			&& property.CollectionItemsKind != CollectionItemsKind.None;
 	}
 
 	private static bool IsCalledAwaitableHook(MethodProperties? hook)
@@ -408,6 +418,82 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 						true
 					)}}{{JsonNameArgument(property, properties.Config)}});
 					nestedValidationResult{{nestedIndex}}.Dispose();
+				}
+				"""
+			);
+		}
+
+		int collectionIndex = 0;
+
+		foreach (var property in properties.Object.Properties)
+		{
+			if (!ValidatesCollectionItems(property, properties.Config))
+			{
+				continue;
+			}
+
+			int n = collectionIndex++;
+			string? jsonName = JsonNameResolver.Resolve(property, properties.Config.JsonNamingPolicy ?? ValidlyNamingPolicy.None);
+			string jsonNameLiteral = jsonName is null ? "null" : SymbolDisplay.FormatLiteral(jsonName, true);
+
+			string itemValidation = $$"""
+				if (collectionItemValue{{n}} is not {} collectionItem{{n}})
+				{
+					continue;
+				}
+
+				context.SetObject(collectionItem{{n}});
+				(({{Consts.InternalValidationInvokerGlobalRef}})collectionItem{{n}}).SetValidationContext(context);
+				var collectionItemResult{{n}} = await (({{Consts.IValidatableGlobalRef}})collectionItem{{n}}).ValidateAsync(serviceProvider!, ct);
+
+				// Only invalid items are reported
+				if (collectionItemResult{{n}}.IsSuccess)
+				{
+					collectionItemResult{{n}}.Dispose();
+					continue;
+				}
+
+				(collectionItemResults{{n}} ??= new()).Add((collectionItemIndex{{n}}, collectionItemResult{{n}}));
+				nestedPropertiesCount += (({{Consts.InternalValidationResultGlobalRef}})collectionItemResult{{n}}).GetPropertiesCount() + (collectionItemResult{{n}}.Global.Count == 0 ? 0 : 1);
+				""";
+
+			string loop = property.CollectionItemsKind == CollectionItemsKind.Enumerable
+				? $$"""
+					int collectionItemIndex{{n}} = -1;
+					foreach (var collectionItemValue{{n}} in collection{{n}})
+					{
+						collectionItemIndex{{n}}++;
+					{{itemValidation.Indent()}}
+					}
+					"""
+				: $$"""
+					for (int collectionItemIndex{{n}} = 0; collectionItemIndex{{n}} < collection{{n}}.{{(property.CollectionItemsKind == CollectionItemsKind.Array ? "Length" : "Count")}}; collectionItemIndex{{n}}++)
+					{
+						var collectionItemValue{{n}} = collection{{n}}[collectionItemIndex{{n}}];
+					{{itemValidation.Indent()}}
+					}
+					""";
+
+			nestedValidations.Add(
+				$$"""
+				// Validate items of "{{property.PropertyName}}"
+				global::System.Collections.Generic.List<(int Index, {{Consts.ValidationResultGlobalRef}} Result)>? collectionItemResults{{n}} = null;
+				if (this.{{property.PropertyName}} is {} collection{{n}})
+				{
+				{{loop.Indent()}}
+				}
+				"""
+			);
+
+			nestedValidationsDispose.Add(
+				$$"""
+				if (collectionItemResults{{n}} is not null)
+				{
+					foreach (var collectionItemResult in collectionItemResults{{n}})
+					{
+						result.CombineCollectionItem(collectionItemResult.Result, {{SymbolDisplay.FormatLiteral(property.PropertyName, true)}}, {{jsonNameLiteral}}, collectionItemResult.Index);
+						collectionItemResult.Result.Dispose();
+					}
 				}
 				"""
 			);

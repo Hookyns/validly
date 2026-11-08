@@ -30,4 +30,9 @@ internal record BaseObjectProperties
 	/// The validation of the (metadata) ancestor is asynchronous
 	/// </summary>
 	public required bool IsAsync { get; init; }
+
+	/// <summary>
+	/// The (metadata) ancestor has the synchronous Validate() method
+	/// </summary>
+	public required bool HasValidateMethod { get; init; }
 }

@@ -373,3 +373,74 @@ public class InheritedValidatableObjectTests
 		}
 	}
 }
+
+// Hook overriding a virtual hook of a non-validatable base is called by the validatable class itself
+public abstract class InheritancePlainBaseWithHook
+{
+	protected virtual IEnumerable<ValidationMessage> AfterValidate()
+	{
+		yield break;
+	}
+}
+
+[Validatable]
+public partial class InheritanceOverridesPlainHook : InheritancePlainBaseWithHook
+{
+	protected override IEnumerable<ValidationMessage> AfterValidate()
+	{
+		yield return new ValidationMessage("Plain hook override", "PlainHook");
+	}
+}
+
+// Virtual hook of a validatable base overridden by a validatable derived class; called once
+[Validatable]
+public partial class InheritanceVirtualHookBase
+{
+	public int Calls { get; set; }
+
+	protected virtual IEnumerable<ValidationMessage> AfterValidate()
+	{
+		Calls++;
+		yield break;
+	}
+}
+
+[Validatable]
+public partial class InheritanceVirtualHookDerived : InheritanceVirtualHookBase
+{
+	protected override IEnumerable<ValidationMessage> AfterValidate()
+	{
+		Calls += 10;
+		yield break;
+	}
+}
+
+public class InheritedHookTests
+{
+	[Fact]
+	public void HookOverridingPlainBaseHook_IsCalled()
+	{
+		using var result = new InheritanceOverridesPlainHook().Validate();
+
+		Assert.Equal("PlainHook", Assert.Single(result.Global).ResourceKey);
+	}
+
+	[Fact]
+	public void HookOverridingValidatableBaseHook_IsCalledOnce()
+	{
+		var obj = new InheritanceVirtualHookDerived();
+
+		obj.Validate().Dispose();
+
+		Assert.Equal(10, obj.Calls);
+	}
+
+	[Fact]
+	public void ObjectWithNestedValidatable_HasSynchronousValidate()
+	{
+		// Nested objects make the validation async, but Validate() is available as long as it completes synchronously
+		using var result = new InheritanceOwner { Pet = new InheritanceDog { Name = "B", Age = 1 } }.Validate();
+
+		Assert.Equal("Pet/Name", Assert.Single(result.Properties, p => !p.IsSuccess).PropertyPath);
+	}
+}

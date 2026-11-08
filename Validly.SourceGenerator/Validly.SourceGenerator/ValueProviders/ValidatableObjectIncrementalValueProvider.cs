@@ -44,7 +44,6 @@ internal static class ValidatableObjectIncrementalValueProvider
 		CancellationToken cancellationToken
 	)
 	{
-		var usings = GetUsings(targetNode);
 		var membersSymbols = typeSymbol.GetMembers();
 		var methods = GetMethods(membersSymbols, semanticModel);
 		var properties = GetProperties(membersSymbols, semanticModel);
@@ -57,7 +56,6 @@ internal static class ValidatableObjectIncrementalValueProvider
 		{
 			UseAutoValidators = GetUseAutoValidatorsValue(validatableAttribute),
 			ExitEarly = GetGetExitEarlyValue(validatableAttribute),
-			Usings = new EquatableArray<string>(usings.Select(static usingSyntax => usingSyntax.ToString()).ToArray()),
 			ClassOrRecordKeyword = typeSymbol.IsRecord ? "record" : "class",
 			Accessibility = typeSymbol.DeclaredAccessibility,
 			Name = typeSymbol.Name,
@@ -299,23 +297,5 @@ internal static class ValidatableObjectIncrementalValueProvider
 		}
 
 		return null;
-	}
-
-	private static UsingDirectiveSyntax[] GetUsings(TypeDeclarationSyntax targetNode)
-	{
-		int max = 5;
-		var target = targetNode.Parent;
-
-		while (max >= 0 && target is not null && target is not CompilationUnitSyntax)
-		{
-			target = target.Parent;
-			max--;
-		}
-
-		// Global usings apply to the whole compilation already; copying them would produce invalid code
-		var usings = target is CompilationUnitSyntax cus
-			? cus.Usings.Where(static usingSyntax => usingSyntax.GlobalKeyword.IsKind(SyntaxKind.None)).ToArray()
-			: Array.Empty<UsingDirectiveSyntax>();
-		return usings;
 	}
 }

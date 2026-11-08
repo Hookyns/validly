@@ -39,6 +39,7 @@ internal static class SymbolMapper
 				: ReturnTypeType.Void,
 			ReturnTypeGenericArgument = namedReturnType?.TypeArguments.FirstOrDefault()?.Name,
 			Dependencies = new EquatableArray<DependencyInjectionInfo>(dependencies),
+			ReturnTypeFullName = methodSymbol.ReturnsVoid ? "void" : ToFullName(methodSymbol.ReturnType),
 			IsCalledByBase = OverridesMethodOfValidatableType(methodSymbol),
 		};
 	}
@@ -72,10 +73,10 @@ internal static class SymbolMapper
 			var constant = attributeData.ConstructorArguments.Single();
 			var key = GenerateKeyFromConstant(constant);
 
-			return new KeyedDependencyInjectionInfo(parameter.Type.Name, key);
+			return new KeyedDependencyInjectionInfo(parameter.Type.Name, ToServiceTypeName(parameter.Type), key);
 		}
 
-		return new DependencyInjectionInfo(parameter.Type.Name);
+		return new DependencyInjectionInfo(parameter.Type.Name, ToServiceTypeName(parameter.Type));
 	}
 
 	private static string GenerateKeyFromConstant(TypedConstant typedConstant)
@@ -89,7 +90,7 @@ internal static class SymbolMapper
 
 		if (typedConstant is { Kind: TypedConstantKind.Enum } enumConstant)
 		{
-			return $"({enumConstant.Type?.ToDisplayString() ?? "int"}) {enumConstant.Value}";
+			return $"({(enumConstant.Type is null ? "int" : ToFullName(enumConstant.Type))}) {enumConstant.Value}";
 		}
 
 		return SymbolDisplay.FormatPrimitive(value, quoteStrings: true, useHexadecimalNumbers: false) ?? "null";
@@ -218,16 +219,46 @@ internal static class SymbolMapper
 		};
 	}
 
+	/// <summary>
+	/// Fully qualified name of the type, usable in any generated file (global::Ns.Type)
+	/// </summary>
+	public static string ToFullName(ITypeSymbol type)
+	{
+		return type.ToDisplayString(FullyQualifiedFormat);
+	}
+
+	/// <summary>
+	/// Service type resolved from the service provider; without the nullable annotation (class constraint)
+	/// </summary>
+	private static string ToServiceTypeName(ITypeSymbol type)
+	{
+		return ToFullName(type.WithNullableAnnotation(NullableAnnotation.NotAnnotated));
+	}
+
+	private static readonly SymbolDisplayFormat FullyQualifiedFormat =
+		SymbolDisplayFormat.FullyQualifiedFormat.AddMiscellaneousOptions(
+			SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier
+		);
+
 	private static string ValueToCode(TypedConstant constant)
 	{
+		if (constant.IsNull)
+		{
+			return "null";
+		}
+
 		return constant.Kind switch
 		{
-			TypedConstantKind.Array => $"new[] {{ {string.Join(", ", constant.Values.Select(ValueToCode))} }}",
-			TypedConstantKind.Type => $"typeof({constant.Value})",
+			TypedConstantKind.Array =>
+				$"new {(constant.Type is IArrayTypeSymbol arrayType ? ToFullName(arrayType.ElementType) : string.Empty)}[] {{ {string.Join(", ", constant.Values.Select(ValueToCode))} }}",
+			TypedConstantKind.Type => constant.Value is ITypeSymbol typeSymbol
+				? $"typeof({ToFullName(typeSymbol)})"
+				: $"typeof({constant.Value})",
+			TypedConstantKind.Enum => $"({(constant.Type is null ? "int" : ToFullName(constant.Type))}){constant.Value}",
 			TypedConstantKind.Primitive => constant.Value switch
 			{
-				string s => $"\"{s}\"",
-				char c => $"'{c}'",
+				string s => SymbolDisplay.FormatLiteral(s, quote: true),
+				char c => SymbolDisplay.FormatLiteral(c, quote: true),
 				bool b => b.ToString().ToLowerInvariant(),
 				double d => d.ToString(new NumberFormatInfo { NumberDecimalSeparator = "." }),
 				float f => f.ToString(new NumberFormatInfo { NumberDecimalSeparator = "." }),

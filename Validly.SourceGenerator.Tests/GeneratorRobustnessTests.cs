@@ -148,7 +148,7 @@ public class GeneratorRobustnessTests
 		);
 
 		string generated = string.Join("\n", result.GeneratedSources.Select(s => s.SourceText.ToString()));
-		Assert.Contains("GetRequiredService<IForbiddenWords>(serviceProvider)", generated);
+		Assert.Matches(@"GetRequiredService<global::[\w.]*IForbiddenWords>\(serviceProvider\)", generated);
 		Assert.Contains("IsValid(Name, serviceIForbiddenWords)", generated);
 	}
 

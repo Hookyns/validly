@@ -19,7 +19,7 @@ internal static class ReturnStatement
 	{
 		return isAsync
 			? $"return {validationResultExpression};"
-			: $"return new ValueTask<{Consts.ValidationResultGlobalRef}>({validationResultExpression});";
+			: $"return new {Consts.ValueTaskGlobalRef}<{Consts.ValidationResultGlobalRef}>({validationResultExpression});";
 	}
 
 	/// <summary>

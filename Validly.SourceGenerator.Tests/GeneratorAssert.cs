@@ -5,14 +5,14 @@ namespace Validly.SourceGenerator.Tests;
 internal static class GeneratorAssert
 {
 	/// <summary>
-	/// Global usings of the SDK's ImplicitUsings; the generated code relies on them
+	/// Usings of the user's file; deliberately NOT global, the generated code must not depend on any usings
 	/// </summary>
 	private const string ImplicitUsings = """
-		global using System;
-		global using System.Collections.Generic;
-		global using System.Linq;
-		global using System.Threading;
-		global using System.Threading.Tasks;
+		using System;
+		using System.Collections.Generic;
+		using System.Linq;
+		using System.Threading;
+		using System.Threading.Tasks;
 
 		""";
 

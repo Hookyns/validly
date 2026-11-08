@@ -48,7 +48,7 @@ internal class RulesClassBuilder
 
 		_rules.Add(
 			$$"""
-			internal static readonly ValueTuple<
+			internal static readonly global::System.ValueTuple<
 				{{string.Join(ParameterDelimiter, tupleTypeArguments)}}
 			> {{properties.PropertyName}}Rule = (
 				{{string.Join(ParameterDelimiter, validatorInstances)}}

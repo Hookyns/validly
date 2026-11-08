@@ -40,12 +40,13 @@ internal class CustomValidationInterfaceBuilder
 			// Full return type name including generic arguments
 			var nullability = (existingMethod.ReturnTypeType & ReturnTypeType.Nullable) != 0 ? "?" : string.Empty;
 			var returnType =
-				existingMethod.ReturnType
-				+ (
-					existingMethod.ReturnTypeGenericArgument is null
-						? nullability
-						: $"<{existingMethod.ReturnTypeGenericArgument}{nullability}>"
-				);
+				existingMethod.ReturnTypeFullName
+				?? existingMethod.ReturnType
+					+ (
+						existingMethod.ReturnTypeGenericArgument is null
+							? nullability
+							: $"<{existingMethod.ReturnTypeGenericArgument}{nullability}>"
+					);
 
 			// Dependencies
 			var dependencies = new List<string>();
@@ -56,7 +57,9 @@ internal class CustomValidationInterfaceBuilder
 				_dependenciesTracker.AddDependency(dependency);
 
 				// Create method parameter
-				dependencies.Add($"{dependency.Name} {dependency.Name.Substring(0, 1).ToLower() + dependency.Name.Substring(1)}");
+				dependencies.Add(
+					$"{dependency.TypeFullName} {dependency.Name.Substring(0, 1).ToLower() + dependency.Name.Substring(1)}"
+				);
 			}
 
 			_customValidationMethods.Add(
@@ -89,7 +92,7 @@ internal class CustomValidationInterfaceBuilder
 				/// <summary>
 				/// Custom validation method for property '{properties.PropertyName}'
 				/// </summary>
-				IEnumerable<{Consts.ValidationMessageGlobalRef}> Validate{properties.PropertyName}();
+				global::System.Collections.Generic.IEnumerable<{Consts.ValidationMessageGlobalRef}> Validate{properties.PropertyName}();
 				""".Indent()
 			);
 

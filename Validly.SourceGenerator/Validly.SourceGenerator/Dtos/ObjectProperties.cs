@@ -16,11 +16,6 @@ internal record ObjectProperties
 	/// </summary>
 	public required bool? ExitEarly { get; init; }
 
-	/// <summary>
-	/// Usings from the validator's file
-	/// </summary>
-	public required EquatableArray<string> Usings { get; init; }
-
 	public required string ClassOrRecordKeyword { get; init; }
 
 	/// <summary>

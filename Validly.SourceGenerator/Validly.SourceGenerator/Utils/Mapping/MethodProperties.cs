@@ -23,6 +23,11 @@ internal record MethodProperties
 	public required string? ReturnTypeGenericArgument { get; init; }
 
 	/// <summary>
+	/// Fully qualified return type including the generic arguments and nullability (global::...)
+	/// </summary>
+	public string? ReturnTypeFullName { get; init; }
+
+	/// <summary>
 	/// Dependencies of the method
 	/// </summary>
 	public required EquatableArray<DependencyInjectionInfo> Dependencies { get; init; }

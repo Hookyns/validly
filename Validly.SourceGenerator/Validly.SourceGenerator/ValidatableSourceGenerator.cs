@@ -90,7 +90,6 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		var validatorClassBuilder = DeclarationBuilder
 			.CreateClassOrRecord(properties.Object.ClassOrRecordKeyword, properties.Object.Name + level.TypeParameterList)
 			.SetAccessModifier(properties.Object.Accessibility)
-			.AddUsings(properties.Object.Usings.GetArray() ?? Array.Empty<string>())
 			// .SetNamespace(properties.Object.Namespace)
 			.Partial()
 			.AddInterfaces(Consts.IValidatableGlobalRef)
@@ -394,7 +393,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				/// Validates the object within the given validation context. Internal method used by the generated code.
 				/// </summary>
 				[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-				{{accessModifier}} {{newModifier}}{{asyncKeyword}}ValueTask<{{Consts.ValidationResultGlobalRef}}> {{Consts.ValidateCoreMethodName}}({{Consts.ValidationContextGlobalRef}} context, {{Consts.ServiceProviderGlobalRef}}? serviceProvider, CancellationToken ct)
+				{{accessModifier}} {{newModifier}}{{asyncKeyword}}global::System.Threading.Tasks.ValueTask<{{Consts.ValidationResultGlobalRef}}> {{Consts.ValidateCoreMethodName}}({{Consts.ValidationContextGlobalRef}} context, {{Consts.ServiceProviderGlobalRef}}? serviceProvider, global::System.Threading.CancellationToken ct)
 				{
 					{{Consts.InternalValidationResultGlobalRef}}? result = null;
 
@@ -605,8 +604,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			foreach (var dependency in level.Dependencies.Services)
 			{
 				var serviceProviderString = dependency is KeyedDependencyInjectionInfo keyedDependency
-					? $"ServiceProviderHelper.GetRequiredKeyedService<{keyedDependency.Name}>(serviceProvider, {keyedDependency.KeySyntax});"
-					: $"ServiceProviderHelper.GetRequiredService<{dependency.Name}>(serviceProvider);";
+					? $"global::Validly.ServiceProviderHelper.GetRequiredKeyedService<{keyedDependency.TypeFullName}>(serviceProvider, {keyedDependency.KeySyntax});"
+					: $"global::Validly.ServiceProviderHelper.GetRequiredService<{dependency.TypeFullName}>(serviceProvider);";
 
 				validateMethodFilePart.AppendLine($"\t\tvar service{dependency.Name} = {serviceProviderString}");
 			}
@@ -628,7 +627,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		validateMethodFilePart.AppendLine(
 			$$"""
 			}
-			catch (Exception)
+			catch (global::System.Exception)
 			{
 				if (result != null)
 				{
@@ -707,7 +706,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		builder.AppendLine(
 			$$"""
 
-			private static async ValueTask<{{Consts.ValidationResultGlobalRef}}> ValidlyDisposeContextWhenCompletedAsync(ValueTask<{{Consts.ValidationResultGlobalRef}}> task, {{Consts.ValidationContextGlobalRef}} context)
+			private static async global::System.Threading.Tasks.ValueTask<{{Consts.ValidationResultGlobalRef}}> ValidlyDisposeContextWhenCompletedAsync(global::System.Threading.Tasks.ValueTask<{{Consts.ValidationResultGlobalRef}}> task, {{Consts.ValidationContextGlobalRef}} context)
 			{
 				try
 				{
@@ -742,12 +741,12 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			/// Validate the object and get the result with error messages.
 			/// </summary>
 			/// <returns>Returns disposable ValidationResult.</returns>
-			public {{modifier}} ValueTask<{{Consts.ValidationResultGlobalRef}}> ValidateAsync({{serviceProviderParameter}}CancellationToken ct = default)
+			public {{modifier}} global::System.Threading.Tasks.ValueTask<{{Consts.ValidationResultGlobalRef}}> ValidateAsync({{serviceProviderParameter}}global::System.Threading.CancellationToken ct = default)
 			{
 				// Context of the parent validation when validated as a part of it
 				var contextSet = (({{Consts.InternalValidationInvokerGlobalRef}})this).GetValidationContext();
 				var context = contextSet ?? {{Consts.ValidationContextGlobalRef}}.Create(this);
-				ValueTask<{{Consts.ValidationResultGlobalRef}}> task;
+				global::System.Threading.Tasks.ValueTask<{{Consts.ValidationResultGlobalRef}}> task;
 
 				try
 				{
@@ -816,7 +815,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	private static void AppendServiceProviderRequiredMethod(SourceTextSectionBuilder builder, ObjectProperties obj, bool isAsync)
 	{
 		var signature = isAsync
-			? $"ValueTask<{Consts.ValidationResultGlobalRef}> ValidateAsync(CancellationToken ct = default)"
+			? $"global::System.Threading.Tasks.ValueTask<{Consts.ValidationResultGlobalRef}> ValidateAsync(global::System.Threading.CancellationToken ct = default)"
 			: $"{Consts.ValidationResultGlobalRef} Validate()";
 		var replacement = isAsync ? "ValidateAsync(IServiceProvider, CancellationToken)" : "Validate(IServiceProvider)";
 
@@ -846,7 +845,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			$$"""
 
 			/// <inheritdoc />
-			ValueTask<{{Consts.ValidationResultGlobalRef}}> {{Consts.IValidatableGlobalRef}}.ValidateAsync({{Consts.ServiceProviderGlobalRef}} serviceProvider, CancellationToken ct)
+			global::System.Threading.Tasks.ValueTask<{{Consts.ValidationResultGlobalRef}}> {{Consts.IValidatableGlobalRef}}.ValidateAsync({{Consts.ServiceProviderGlobalRef}} serviceProvider, global::System.Threading.CancellationToken ct)
 			{
 				return ValidateAsync({{serviceProviderArgument}}ct);
 			}

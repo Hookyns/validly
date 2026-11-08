@@ -26,6 +26,9 @@ internal static class Consts
 	public const string ExtendableValidationResultGlobalRef = "global::Validly.ExtendableValidationResult";
 	public const string InternalValidationResultGlobalRef = "global::Validly.IInternalValidationResult";
 	public const string ServiceProviderGlobalRef = $"global::System.{nameof(IServiceProvider)}";
+	public const string ValueTaskGlobalRef = "global::System.Threading.Tasks.ValueTask";
+	public const string CancellationTokenGlobalRef = "global::System.Threading.CancellationToken";
+	public const string ServiceProviderHelperGlobalRef = "global::Validly.ServiceProviderHelper";
 	public const string WeakReferenceGlobalRef = $"global::System.{nameof(WeakReference)}";
 	public const string ValidationMessageGlobalRef = "global::Validly.ValidationMessage";
 

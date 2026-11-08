@@ -18,9 +18,7 @@ public sealed class MinCollectionSizeAttribute : Attribute
 	public MinCollectionSizeAttribute(int minSize)
 	{
 		_minSize = minSize;
-		_message = new ValidationMessage(
-			"Must contain at least {0} items.",
-			"Validly.Validations.MinCollectionSize",
+		_message = ValidationMessagesHelper.CreateMessage(ValidationCodes.MinCollectionSize, LegacyValidationCodes.MinCollectionSize, [ValidationMessagesHelper.Arg("min", _minSize)], "Must contain at least {0} items.",
 			_minSize
 		);
 	}

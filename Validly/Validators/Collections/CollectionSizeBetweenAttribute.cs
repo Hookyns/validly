@@ -20,9 +20,7 @@ public sealed class CollectionSizeBetweenAttribute : Attribute
 	{
 		_minSize = minSize;
 		_maxSize = maxSize;
-		_message = new ValidationMessage(
-			"Must contain between {0} and {1} items.",
-			"Validly.Validations.CollectionSizeBetween",
+		_message = ValidationMessagesHelper.CreateMessage(ValidationCodes.CollectionSizeBetween, LegacyValidationCodes.CollectionSizeBetween, [ValidationMessagesHelper.Arg("min", _minSize), ValidationMessagesHelper.Arg("max", _maxSize)], "Must contain between {0} and {1} items.",
 			_minSize,
 			_maxSize
 		);

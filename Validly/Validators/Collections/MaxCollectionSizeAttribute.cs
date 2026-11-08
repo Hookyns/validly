@@ -18,9 +18,7 @@ public sealed class MaxCollectionSizeAttribute : Attribute
 	public MaxCollectionSizeAttribute(int maxSize)
 	{
 		_maxSize = maxSize;
-		_message = new ValidationMessage(
-			"Must contain no more than {0} items.",
-			"Validly.Validations.MaxCollectionSize",
+		_message = ValidationMessagesHelper.CreateMessage(ValidationCodes.MaxCollectionSize, LegacyValidationCodes.MaxCollectionSize, [ValidationMessagesHelper.Arg("max", _maxSize)], "Must contain no more than {0} items.",
 			_maxSize
 		);
 	}

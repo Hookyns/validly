@@ -1,6 +1,14 @@
 <Project>
 
 	<!--
+		<ValidlyLegacyValidationCodes>true</ValidlyLegacyValidationCodes> - the built-in validators use the Validly 1.x codes
+		(e.g. "Validly.Validations.LengthBetween.Error") and the problem details JSON contains "resourceKey" instead of "code".
+	-->
+	<ItemGroup Condition="'$(ValidlyLegacyValidationCodes)' == 'true'">
+		<RuntimeHostConfigurationOption Include="Validly.UseLegacyValidationCodes" Value="true" Trim="true" />
+	</ItemGroup>
+
+	<!--
 		Validly 2 contains the source generator. A Validly.SourceGenerator 1.x package (referenced directly or transitively)
 		would generate the validation a second time, so its analyzer is removed.
 	-->

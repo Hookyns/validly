@@ -21,6 +21,22 @@ public static class ValidlyOptions
 	public static int ObjectPoolSize { get; internal set; } = Environment.ProcessorCount * 2;
 
 	/// <summary>
+	/// Name of the AppContext switch enabling the Validly 1.x codes (<see cref="Validly.Validators.LegacyValidationCodes"/>)
+	/// </summary>
+	public const string UseLegacyValidationCodesSwitchName = "Validly.UseLegacyValidationCodes";
+
+	/// <summary>
+	/// The built-in validators use the Validly 1.x codes (<see cref="Validly.Validators.LegacyValidationCodes"/>) and the
+	/// problem details JSON contains "resourceKey" instead of "code".
+	/// </summary>
+	/// <remarks>
+	/// Process-wide; read once. Enable it by the MSBuild property <c>&lt;ValidlyLegacyValidationCodes&gt;true&lt;/ValidlyLegacyValidationCodes&gt;</c>,
+	/// or <c>AppContext.SetSwitch("Validly.UseLegacyValidationCodes", true)</c> before the first validation.
+	/// </remarks>
+	public static bool UseLegacyValidationCodes { get; } =
+		AppContext.TryGetSwitch(UseLegacyValidationCodesSwitchName, out bool isEnabled) && isEnabled;
+
+	/// <summary>
 	/// Configure Validly
 	/// </summary>
 	public static void Configure(Action<OptionsBuilder> configure)

@@ -215,7 +215,7 @@ public class InheritedValidatableObjectTests
 
 		// Base hook sees the derived object as the root; the context is shared
 		Assert.Equal(["Animal:InheritanceDog", "Dog"], dog.HookCalls);
-		Assert.Equal("Dog.Rex", Assert.Single(result.Global).ResourceKey);
+		Assert.Equal("Dog.Rex", Assert.Single(result.Global).Code);
 	}
 
 	[Fact]
@@ -341,7 +341,7 @@ public class InheritedValidatableObjectTests
 		using var result = await new InheritanceDerivedFromAsyncBase { Name = "async", Other = "ab" }.ValidateAsync();
 
 		Assert.Equal(["Name", "Other"], result.Properties.Select(p => p.PropertyPath));
-		Assert.Equal("Async.Error", Assert.Single(result.Global).ResourceKey);
+		Assert.Equal("Async.Error", Assert.Single(result.Global).Code);
 		Assert.False(result.Properties[1].IsSuccess);
 	}
 
@@ -419,7 +419,7 @@ public class InheritedHookTests
 	{
 		using var result = new InheritanceOverridesPlainHook().Validate();
 
-		Assert.Equal("PlainHook", Assert.Single(result.Global).ResourceKey);
+		Assert.Equal("PlainHook", Assert.Single(result.Global).Code);
 	}
 
 	[Fact]

@@ -45,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SourceGenerator", "SourceGe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validly.SourceGenerator.Roslyn5.0", "Validly.SourceGenerator\Validly.SourceGenerator.Roslyn5.0\Validly.SourceGenerator.Roslyn5.0.csproj", "{7204D460-3207-4AAB-8B1A-30EF2379B708}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Validly.Tests.LegacyCodes", "Validly.Tests.LegacyCodes\Validly.Tests.LegacyCodes.csproj", "{6D568B3D-9F43-449F-B19F-FF10249DEC2E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -199,6 +201,18 @@ Global
 		{7204D460-3207-4AAB-8B1A-30EF2379B708}.Release|x64.Build.0 = Release|Any CPU
 		{7204D460-3207-4AAB-8B1A-30EF2379B708}.Release|x86.ActiveCfg = Release|Any CPU
 		{7204D460-3207-4AAB-8B1A-30EF2379B708}.Release|x86.Build.0 = Release|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Debug|x64.Build.0 = Debug|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Debug|x86.Build.0 = Debug|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Release|x64.ActiveCfg = Release|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Release|x64.Build.0 = Release|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Release|x86.ActiveCfg = Release|Any CPU
+		{6D568B3D-9F43-449F-B19F-FF10249DEC2E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

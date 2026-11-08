@@ -12,9 +12,7 @@ namespace Validly.Validators;
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class NotEmptyAttribute : Attribute
 {
-	private static readonly ValidationMessage NotEmptyMessage = new(
-		"A non-empty value is required.",
-		"Validly.Validations.NotEmpty"
+	private static readonly ValidationMessage NotEmptyMessage = ValidationMessagesHelper.CreateMessage(ValidationCodes.NotEmpty, LegacyValidationCodes.NotEmpty, null, "A non-empty value is required."
 	);
 
 	/// <summary>

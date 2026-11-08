@@ -107,7 +107,7 @@ public class CollectionItemsValidationTests
 
 		var failed = result
 			.Properties.Where(p => !p.IsSuccess)
-			.ToDictionary(p => p.PropertyPath, p => p.Messages.Select(m => m.ResourceKey).ToArray());
+			.ToDictionary(p => p.PropertyPath, p => p.Messages.Select(m => m.Code).ToArray());
 
 		Assert.Equal(["Lines/1/ProductCode", "Lines/1/Quantity", "Lines/2"], failed.Keys);
 		Assert.Equal(["OrderLine.Discontinued"], failed["Lines/2"]);
@@ -257,7 +257,7 @@ public class CollectionItemsValidationTests
 
 		var errors = result.GetProblemDetails().Errors;
 
-		Assert.Contains(errors, e => e.Pointer == "#/Lines/2" && e.ResourceKey == "OrderLine.Discontinued");
+		Assert.Contains(errors, e => e.Pointer == "#/Lines/2" && e.Code == "OrderLine.Discontinued");
 	}
 }
 

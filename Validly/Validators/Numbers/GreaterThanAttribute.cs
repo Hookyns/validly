@@ -35,9 +35,7 @@ public sealed class GreaterThanAttribute : Attribute
 	}
 
 	private ValidationMessage CreateMessage() =>
-		new(
-			"Must be greater than {0}.",
-			ValidationMessagesHelper.GenerateResourceKey(nameof(GreaterThanAttribute)),
+		ValidationMessagesHelper.CreateMessage(ValidationCodes.GreaterThan, LegacyValidationCodes.GreaterThan, [ValidationMessagesHelper.Arg("min", _min)], "Must be greater than {0}.",
 			_min
 		);
 

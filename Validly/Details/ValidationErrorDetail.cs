@@ -11,14 +11,25 @@ public class ValidationErrorDetail
 	public required string Detail { get; init; }
 
 	/// <summary>
-	/// Resource key for the <see cref="Detail"/> so it can be translated
+	/// Stable, public code of the error; usable as a key to translate the <see cref="Detail"/>
 	/// </summary>
-	public required string ResourceKey { get; init; }
+	public required string Code { get; init; }
 
 	/// <summary>
-	/// Arguments used in the <see cref="Detail"/>, usable for <see cref="ResourceKey"/>
+	/// Resource key for the <see cref="Detail"/> so it can be translated
+	/// </summary>
+	[Obsolete("Use Code. ResourceKey is an alias of Code.")]
+	public string ResourceKey => Code;
+
+	/// <summary>
+	/// Positional arguments used in the <see cref="Detail"/>
 	/// </summary>
 	public required object?[] Args { get; init; }
+
+	/// <summary>
+	/// Named arguments, e.g. ("min", 5), ("max", 20); null when the message has none
+	/// </summary>
+	public IReadOnlyList<KeyValuePair<string, object?>>? NamedArgs { get; init; }
 
 	/// <summary>
 	/// Indicates a location of the data causing the validation error

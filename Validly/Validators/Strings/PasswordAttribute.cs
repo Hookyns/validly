@@ -82,26 +82,36 @@ public class PasswordAttribute : Attribute
 		_numberOfRequiredUpperCaseCharacters = numberOfRequiredUpperCaseCharacters;
 		_numberOfRequiredDigitCharacters = numberOfRequiredDigitCharacters;
 
-		_lengthValidationMessage = new(
+		_lengthValidationMessage = ValidationMessagesHelper.CreateMessage(
+			ValidationCodes.PasswordLength,
+			LegacyValidationCodes.PasswordLength,
+			[ValidationMessagesHelper.Arg("min", minLength)],
 			"Password must be at least {0} characters long.",
-			$"{ValidationMessagesHelper.GenerateResourceKey(nameof(PasswordAttribute))}.Length",
-			minLength);
+			minLength
+		);
 
-		_specialCharactersValidationMessage = new(
+		_specialCharactersValidationMessage = ValidationMessagesHelper.CreateMessage(
+			ValidationCodes.PasswordSpecialChar,
+			LegacyValidationCodes.PasswordSpecialChar,
+			[ValidationMessagesHelper.Arg("min", _numberOfRequiredSpecialCharacters)],
 			"The password must contain at least {0} special character letter(s).",
-			$"{ValidationMessagesHelper.GenerateResourceKey(nameof(PasswordAttribute))}.SpecialChar",
-			_numberOfRequiredSpecialCharacters);
+			_numberOfRequiredSpecialCharacters
+		);
 
-		_upperCaseValidationMessage = new(
+		_upperCaseValidationMessage = ValidationMessagesHelper.CreateMessage(
+			ValidationCodes.PasswordUpperCase,
+			LegacyValidationCodes.PasswordUpperCase,
+			[ValidationMessagesHelper.Arg("min", _numberOfRequiredUpperCaseCharacters)],
 			"The password must contain at least {0} uppercase letter(s).",
-			$"{ValidationMessagesHelper.GenerateResourceKey(nameof(PasswordAttribute))}.UpperCase",
 			_numberOfRequiredUpperCaseCharacters
 		);
 
-		_digitsValidationMessage = new(
+		_digitsValidationMessage = ValidationMessagesHelper.CreateMessage(
+			ValidationCodes.PasswordDigit,
+			LegacyValidationCodes.PasswordDigit,
+			[ValidationMessagesHelper.Arg("min", _numberOfRequiredDigitCharacters)],
 			"The password must contain at least {0} digit letter(s).",
-			$"{ValidationMessagesHelper.GenerateResourceKey(nameof(PasswordAttribute))}.Digit",
-			_numberOfRequiredUpperCaseCharacters
+			_numberOfRequiredDigitCharacters
 		);
 	}
 

@@ -14,15 +14,18 @@ public sealed class MatchAttribute : Attribute
 {
 	private readonly Regex _regex;
 
-	private static readonly ValidationMessage ValidationMessage = ValidationMessagesHelper.CreateMessage(
-		nameof(MatchAttribute),
-		"Must match the required format."
-	);
+	private readonly ValidationMessage _message;
 
 	/// <param name="pattern">The regular expression pattern to match.</param>
 	public MatchAttribute([StringSyntax(StringSyntaxAttribute.Regex)] string pattern)
 	{
 		_regex = new Regex(pattern, RegexOptions.Compiled);
+		_message = ValidationMessagesHelper.CreateMessage(
+			ValidationCodes.Match,
+			LegacyValidationCodes.Match,
+			[ValidationMessagesHelper.Arg("pattern", pattern)],
+			"Must match the required format."
+		);
 	}
 
 	/// <summary>
@@ -35,7 +38,7 @@ public sealed class MatchAttribute : Attribute
 	{
 		if (value is not null && !_regex.IsMatch(value))
 		{
-			return ValidationMessage;
+			return _message;
 		}
 
 		return null;

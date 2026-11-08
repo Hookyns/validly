@@ -102,8 +102,9 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 					prop.Messages.Select(error => new ValidationErrorDetail
 					{
 						Detail = error.Message,
-						ResourceKey = error.ResourceKey,
+						Code = error.Code,
 						Args = error.Args,
+						NamedArgs = error.NamedArgs,
 						Pointer = $"#/{prop.GetJsonPointerPath(namingPolicy)}",
 						FieldName = prop.PropertyDisplayName,
 					})
@@ -112,8 +113,9 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 					GlobalMessages.Select(error => new ValidationErrorDetail
 					{
 						Detail = error.Message,
-						ResourceKey = error.ResourceKey,
+						Code = error.Code,
 						Args = error.Args,
+						NamedArgs = error.NamedArgs,
 						Pointer = "#",
 						FieldName = null,
 					})
@@ -148,8 +150,8 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 				$$"""
 				    {
 				      "detail": "{{JsonEscaper.Escape(error.Message)}}",
-				      "resourceKey": "{{JsonEscaper.Escape(error.ResourceKey)}}",
-				      "args": [{{error.ArgsJson}}],
+				      "{{CodePropertyName}}": "{{JsonEscaper.Escape(error.Code)}}",
+				      "args": [{{error.ArgsJson}}],{{NamedArgsJsonMember(error)}}
 				      "pointer": "#"
 				    },
 				"""
@@ -176,8 +178,8 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 					$$"""
 					    {
 					      "detail": "{{JsonEscaper.Escape(error.Message)}}",
-					      "resourceKey": "{{JsonEscaper.Escape(error.ResourceKey)}}",
-					      "args": [{{error.ArgsJson}}],
+					      "{{CodePropertyName}}": "{{JsonEscaper.Escape(error.Code)}}",
+					      "args": [{{error.ArgsJson}}],{{NamedArgsJsonMember(error)}}
 					      "pointer": "#/{{pointer}}",
 					      "fieldName": "{{fieldName}}"
 					    },
@@ -196,6 +198,23 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 			  ]
 			}
 			""";
+	}
+
+	/// <summary>
+	/// Name of the code property in the problem details JSON; "resourceKey" for the Validly 1.x compatible output
+	/// </summary>
+	private static readonly string CodePropertyName = ValidlyOptions.UseLegacyValidationCodes ? "resourceKey" : "code";
+
+	/// <summary>
+	/// "namedArgs" member of the problem details JSON error; empty when the message has no named arguments
+	/// </summary>
+	private static string NamedArgsJsonMember(ValidationMessage error)
+	{
+		string namedArgsJson = error.NamedArgsJson;
+
+		return namedArgsJson.Length == 0
+			? string.Empty
+			: $"{Environment.NewLine}      \"namedArgs\": {{{namedArgsJson}}},";
 	}
 
 	/// <inheritdoc />

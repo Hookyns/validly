@@ -20,8 +20,7 @@ public sealed class LengthBetweenAttribute : Attribute
 	{
 		_min = min;
 		_max = max;
-		_message = ValidationMessagesHelper.CreateMessage(
-			nameof(LengthBetweenAttribute),
+		_message = ValidationMessagesHelper.CreateMessage(ValidationCodes.LengthBetween, LegacyValidationCodes.LengthBetween, [ValidationMessagesHelper.Arg("min", _min), ValidationMessagesHelper.Arg("max", _max)],
 			"Length must be between {0} and {1}.",
 			_min,
 			_max

@@ -17,8 +17,7 @@ public sealed class MaxLengthAttribute : Attribute
 	public MaxLengthAttribute(int maxLength)
 	{
 		_maxLength = maxLength;
-		_message = ValidationMessagesHelper.CreateMessage(
-			nameof(MaxLengthAttribute),
+		_message = ValidationMessagesHelper.CreateMessage(ValidationCodes.MaxLength, LegacyValidationCodes.MaxLength, [ValidationMessagesHelper.Arg("max", maxLength)],
 			"Must be no more than {0} characters long.",
 			maxLength
 		);

@@ -42,9 +42,7 @@ public sealed class ExclusiveBetweenAttribute : Attribute
 	}
 
 	private ValidationMessage CreateMessage() =>
-		new(
-			"Must be between {0} and {1} (exclusive).",
-			ValidationMessagesHelper.GenerateResourceKey(nameof(ExclusiveBetweenAttribute)),
+		ValidationMessagesHelper.CreateMessage(ValidationCodes.ExclusiveBetween, LegacyValidationCodes.ExclusiveBetween, [ValidationMessagesHelper.Arg("min", _min), ValidationMessagesHelper.Arg("max", _max)], "Must be between {0} and {1} (exclusive).",
 			_min,
 			_max
 		);

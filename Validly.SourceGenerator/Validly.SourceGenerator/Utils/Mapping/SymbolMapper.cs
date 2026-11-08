@@ -39,6 +39,7 @@ internal static class SymbolMapper
 				: ReturnTypeType.Void,
 			ReturnTypeGenericArgument = namedReturnType?.TypeArguments.FirstOrDefault()?.Name,
 			Dependencies = new EquatableArray<DependencyInjectionInfo>(dependencies),
+			IsOverride = methodSymbol.IsOverride,
 		};
 	}
 

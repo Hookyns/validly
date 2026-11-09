@@ -23,4 +23,76 @@ internal static class DiagnosticDescriptors
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true
 	);
+
+	public static readonly DiagnosticDescriptor ValidatableMustBePartial = new(
+		id: "VLY0010",
+		title: "Validatable type must be partial",
+		messageFormat: "The validatable type '{0}' must be declared partial; its validation is generated into another part",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor ValidatableMustNotBeNested = new(
+		id: "VLY0011",
+		title: "Validatable type must not be nested",
+		messageFormat: "The validatable type '{0}' is nested in another type; validatable types must be top-level types",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor UnsupportedHookReturnType = new(
+		id: "VLY0012",
+		title: "Unsupported return type of a validation hook",
+		messageFormat: "The return type '{1}' of '{0}' is not supported; use void, Task, ValueTask, ValidationResult, ValidationMessage, Validation, IEnumerable<ValidationMessage>, IAsyncEnumerable<ValidationMessage> or Task/ValueTask of ValidationResult, ValidationMessage or Validation",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor UnsupportedParameter = new(
+		id: "VLY0013",
+		title: "Unsupported parameter of a validation method",
+		messageFormat: "The parameter '{0}' of '{1}' cannot be provided; supported are CancellationToken, ValidationContext, ValidationResult and services (reference types) resolved from the IServiceProvider, without ref/out/in/params",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor MissingCustomValidationMethod = new(
+		id: "VLY0014",
+		title: "Missing custom validation method",
+		messageFormat: "The property '{0}' has [CustomValidation] but the type does not declare the method '{1}'",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor CustomValidationMethodNotPublic = new(
+		id: "VLY0015",
+		title: "Custom validation method must be public",
+		messageFormat: "The custom validation method '{0}' must be public (or an explicit implementation of the generated custom validation interface)",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor UnsupportedValidationReturnType = new(
+		id: "VLY0016",
+		title: "Unsupported return type of a validation method",
+		messageFormat: "The return type '{1}' of '{0}' is not supported; use ValidationMessage, Validation, ValidationResult, IEnumerable<ValidationMessage>, IAsyncEnumerable<ValidationMessage> or Task/ValueTask of ValidationMessage, Validation or ValidationResult",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor ValidatorWithoutIsValid = new(
+		id: "VLY0017",
+		title: "Validator without IsValid method",
+		messageFormat: "The validator '{0}' must declare an IsValid method with the validated value as the first parameter",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
 }

@@ -307,7 +307,10 @@ public class ApiAssemblyTests
 		// Shipped next to third-party generators; Validly's generator must not run from it
 		var generatorTypes = typeof(ValidlySourceGeneration)
 			.Assembly.GetTypes()
-			.Where(t => t.GetCustomAttributes(typeof(GeneratorAttribute), inherit: false).Length != 0);
+			.Where(t =>
+				t.GetCustomAttributes(typeof(GeneratorAttribute), inherit: false).Length != 0
+				|| t.GetCustomAttributes(typeof(Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzerAttribute), inherit: false).Length != 0
+			);
 
 		Assert.Empty(generatorTypes);
 	}

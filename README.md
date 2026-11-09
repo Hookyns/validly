@@ -159,20 +159,30 @@ between). The result of the derived class contains the results of the base class
 (`IServiceProvider`), the inherited methods without `IServiceProvider` throw; use the overloads with it.
 
 ## Installation
-Install the package via NuGet:
+A single package contains the runtime, the built-in validators (`using Validly.Validators;`) and the source generator:
 ```bash
 dotnet add package Validly
 ```
 
-Install the source generator package to enable compile-time validation code generation:
+ASP.NET Core integration (endpoint filter returning problem details):
 ```bash
-dotnet add package Validly.SourceGenerator
+dotnet add package Validly.Extensions.AspNetCore
 ```
 
-Install the package with default validators:
-```bash
-dotnet add package Validly.Validators
-```
+The source generator is built for Roslyn 4.8+ (.NET 8 SDK / VS 17.8) and Roslyn 5.0 (.NET 10 SDK); the right one is
+picked automatically. Upgrading from 1.x? See [MIGRATION.md](MIGRATION.md).
+
+## Detached validation, analyzers and the generator API
+- **Detached objects** – `[Validatable(Detached = true)]` objects do not implement Validly interfaces, so projects
+  that only use them (e.g. infrastructure using domain objects) do not need a reference to Validly. They are
+  validated by `Validate()`/`ValidateAsync()` as usual, and by their runtime type through `ValidatorRegistry`
+  (used by the ASP.NET Core filter).
+- **Analyzers** – unsupported shapes are reported at compile time: non-partial or nested validatable types
+  (VLY0010, VLY0011), unsupported return types or parameters of `BeforeValidate`/`AfterValidate` hooks and custom
+  validation methods (VLY0012, VLY0013, VLY0016), missing or non-public custom validation methods (VLY0014, VLY0015)
+  and validators without `IsValid` (VLY0017).
+- **Generator API** – [`Validly.SourceGeneration`](Validly.SourceGeneration/README.md) lets your own source generators
+  generate Validly validation, e.g. copy the validation of entities to generated DTOs.
 
 ## Why Validly? Why Attribute-Based Validation?
 **Validly** was born out of the need for a simple, performant way to handle validations in applications, particularly when following Domain-Driven Design (DDD). In DDD, entities are responsible for their own validation. While validations on the API level are important, they cannot be the sole safeguard. The domain must validate entities independently, as the API is just one entry point to your system. Other sources, like background jobs or message queues, can also create or interact with domain objects.

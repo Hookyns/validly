@@ -1,5 +1,28 @@
 # Migrating from Validly 1.x to 2.0
 
+## Packages and namespaces
+- Reference only the `Validly` package; it contains the runtime, the built-in validators and the source generator.
+  Remove `Validly.SourceGenerator` and `Validly.Extensions.Validators` (a leftover `Validly.SourceGenerator` 1.x
+  analyzer is removed automatically and reported as VLY2000).
+- All built-in validators live in the `Validly.Validators` namespace:
+  replace `using Validly.Extensions.Validators.Common;`, `...Strings;`, `...Numbers;`, `...Collections;`, `...Enums;`
+  with `using Validly.Validators;`.
+- `<CompilerVisibleProperty Include="ValidlyConfiguration" />` is no longer needed; the package adds it.
+- `Validly.Extensions.AspNetCore` 2.x requires `Validly` 2.x.
+
+## Generated code
+- The generated code is fully qualified; it does not copy the usings of your file anymore.
+- Nested objects and collection items are validated through `IInternalValidatable` (explicitly implemented).
+  `IInternalValidationInvoker` (and the hidden context field) and `ValidationContextDisposer` were removed.
+- A validatable base class compiled with Validly 1.x is not validated as a part of a derived class compiled with
+  Validly 2 (VLY0002); rebuild it with Validly 2.
+- New analyzers report unsupported shapes as errors (VLY0010–VLY0017). Code that compiled before but silently
+  ignored a result (e.g. a hook returning `List<ValidationMessage>`) is now reported.
+
+## Behaviour (also in 1.4)
+- Inheritance of validatable classes, validation of collection items (`Lines/1/ProductCode`), JSON names in
+  problem details pointers – see the README.
+
 ## Error codes (`ResourceKey` → `Code`)
 - `ValidationMessage.ResourceKey` is now `ValidationMessage.Code`. `ResourceKey` still exists as an `[Obsolete]` alias.
   The same applies to `ValidationErrorDetail`.

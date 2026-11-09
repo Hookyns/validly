@@ -8,3 +8,5 @@ riderModule.iml
 /Benchmarks/**/*.csv
 .idea/
 Validly.sln.DotSettings.user
+# Dev benchmark results
+Benchmarks/Benchmarks.Dev/BenchmarkDotNet.Artifacts/

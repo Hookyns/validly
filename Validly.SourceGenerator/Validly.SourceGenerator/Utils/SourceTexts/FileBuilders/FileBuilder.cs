@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Validly.SourceGenerator.Utils.SourceTexts.FileBuilders;
 
-public class FileBuilder
+internal class FileBuilder
 {
 	private readonly List<SourceTextSectionBuilder> _parts = new() { new SourceTextSectionBuilder() };
 

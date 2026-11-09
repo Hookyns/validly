@@ -14,8 +14,13 @@ using Validly.SourceGenerator.ValueProviders;
 
 namespace Validly.SourceGenerator;
 
+// Compiled into the Validly.SourceGeneration API too; there it must not be discovered as a generator
+#if VALIDLY_SOURCE_GENERATION_API
+internal class ValidatableSourceGenerator : IIncrementalGenerator
+#else
 [Generator]
 public class ValidatableSourceGenerator : IIncrementalGenerator
+#endif
 {
 	public void Initialize(IncrementalGeneratorInitializationContext initContext)
 	{
@@ -59,6 +64,22 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 	private static void ExecuteValidatorGeneration(
 		SourceProductionContext context,
+		(
+			ObjectProperties Object,
+			ValidlyConfiguration Config,
+			EquatableArray<ValidatorProperties> Validators
+		) properties
+	)
+	{
+		var (hintName, sourceText) = GenerateSource(properties);
+		context.AddSource(hintName, SourceText.From(sourceText, Encoding.UTF8));
+	}
+
+	/// <summary>
+	/// Generate the validation part of the object
+	/// </summary>
+	/// <returns>Hint name of the file and the source text</returns>
+	internal static (string HintName, string SourceText) GenerateSource(
 		(
 			ObjectProperties Object,
 			ValidlyConfiguration Config,
@@ -135,7 +156,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 					: $"{properties.Object.Name}{{{string.Join(",", typeParameters)}}}"
 			);
 
-		context.AddSource($"{hintName}.Validator.g.cs", SourceText.From(sourceText, Encoding.UTF8));
+		return ($"{hintName}.Validator.g.cs", sourceText);
 	}
 
 	private static void AppendDependenciesOfBeforeAndAfterMethods(

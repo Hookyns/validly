@@ -34,13 +34,20 @@ internal static class ValidatableObjectIncrementalValueProvider
 			return null;
 		}
 
-		return MapObject(typeSymbol, targetNode, context.SemanticModel, cancellationToken);
+		return MapObject(typeSymbol, context.SemanticModel, context.SemanticModel.Compilation, cancellationToken);
 	}
 
-	private static ObjectProperties MapObject(
+	/// <summary>
+	/// Map the validatable object (declared in source or in a referenced assembly)
+	/// </summary>
+	/// <param name="typeSymbol">The object</param>
+	/// <param name="semanticModel">Semantic model of the object's declaration; null for metadata types</param>
+	/// <param name="compilation">The compilation</param>
+	/// <param name="cancellationToken"></param>
+	internal static ObjectProperties MapObject(
 		INamedTypeSymbol typeSymbol,
-		TypeDeclarationSyntax targetNode,
-		SemanticModel semanticModel,
+		SemanticModel? semanticModel,
+		Compilation compilation,
 		CancellationToken cancellationToken
 	)
 	{
@@ -48,9 +55,10 @@ internal static class ValidatableObjectIncrementalValueProvider
 		var methods = GetMethods(membersSymbols, semanticModel);
 		var properties = GetProperties(membersSymbols, semanticModel);
 
+		// Missing when mapped for the generation API (the source type does not have to be [Validatable])
 		var validatableAttribute = typeSymbol
 			.GetAttributes()
-			.First(attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName);
+			.FirstOrDefault(attr => attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName);
 
 		return new ObjectProperties
 		{
@@ -71,7 +79,7 @@ internal static class ValidatableObjectIncrementalValueProvider
 				: null,
 			Properties = new EquatableArray<PropertyProperties>(properties),
 			Methods = new EquatableArray<MethodProperties>(methods),
-			BaseObject = GetBaseObject(typeSymbol, semanticModel.Compilation, cancellationToken),
+			BaseObject = GetBaseObject(typeSymbol, compilation, cancellationToken),
 			IsSealed = typeSymbol.IsSealed,
 			BeforeValidateMethod = methods.FirstOrDefault(static m => m.MethodName == Consts.BeforeValidateMethodName),
 			AfterValidateMethod = methods.FirstOrDefault(static m => m.MethodName == Consts.AfterValidateMethodName),
@@ -110,8 +118,8 @@ internal static class ValidatableObjectIncrementalValueProvider
 					IsFromSource = true,
 					Object = MapObject(
 						definition,
-						baseNode,
 						compilation.GetSemanticModel(baseNode.SyntaxTree),
+						compilation,
 						cancellationToken
 					),
 					HasCoreMethod = true,
@@ -202,7 +210,7 @@ internal static class ValidatableObjectIncrementalValueProvider
 
 	private static PropertyProperties[] GetProperties(
 		ImmutableArray<ISymbol> membersSymbols,
-		SemanticModel semanticModel
+		SemanticModel? semanticModel
 	)
 	{
 		var list = new List<PropertyProperties>();
@@ -220,7 +228,7 @@ internal static class ValidatableObjectIncrementalValueProvider
 		return list.ToArray();
 	}
 
-	private static MethodProperties[] GetMethods(ImmutableArray<ISymbol> membersSymbols, SemanticModel semanticModel)
+	private static MethodProperties[] GetMethods(ImmutableArray<ISymbol> membersSymbols, SemanticModel? semanticModel)
 	{
 		var list = new List<MethodProperties>();
 
@@ -245,8 +253,13 @@ internal static class ValidatableObjectIncrementalValueProvider
 		return list.ToArray();
 	}
 
-	private static bool? GetUseAutoValidatorsValue(AttributeData validatableAttribute)
+	private static bool? GetUseAutoValidatorsValue(AttributeData? validatableAttribute)
 	{
+		if (validatableAttribute is null)
+		{
+			return null;
+		}
+
 		if (
 			validatableAttribute
 				.NamedArguments.FirstOrDefault(static x =>
@@ -274,8 +287,13 @@ internal static class ValidatableObjectIncrementalValueProvider
 		return null;
 	}
 
-	private static bool? GetGetExitEarlyValue(AttributeData validatableAttribute)
+	private static bool? GetGetExitEarlyValue(AttributeData? validatableAttribute)
 	{
+		if (validatableAttribute is null)
+		{
+			return null;
+		}
+
 		if (
 			validatableAttribute
 				.NamedArguments.FirstOrDefault(static x => x.Key == Consts.ValidatableAttributeUseExitEarlyPropertyName)

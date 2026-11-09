@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Validly.SourceGenerator.Utils;
 
-public static class Extensions
+internal static class Extensions
 {
 	private static readonly SymbolDisplayFormat QualifiedNameArityFormat = new(
 		globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,

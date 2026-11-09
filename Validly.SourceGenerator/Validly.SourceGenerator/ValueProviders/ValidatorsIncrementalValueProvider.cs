@@ -33,6 +33,24 @@ internal static class ValidatorsIncrementalValueProvider
 		return allValidators;
 	}
 
+	/// <summary>
+	/// All the validators available to the compilation (referenced assemblies and the compilation itself)
+	/// </summary>
+	internal static EquatableArray<ValidatorProperties> GetValidators(
+		Compilation compilation,
+		CancellationToken cancellationToken
+	)
+	{
+		return new EquatableArray<ValidatorProperties>(
+			compilation
+				.SourceModule.ReferencedAssemblySymbols.SelectMany(assemblySymbol =>
+					SelectValidatorsProperties(assemblySymbol, cancellationToken)
+				)
+				.Concat(SelectValidatorsProperties(compilation.SourceModule.ContainingAssembly, cancellationToken))
+				.ToArray()
+		);
+	}
+
 	private static IEnumerable<ValidatorProperties> SelectValidatorsProperties(
 		IAssemblySymbol assemblySymbol,
 		CancellationToken cancellationToken

@@ -2,7 +2,7 @@ using Validly.Naming;
 
 namespace Validly.SourceGenerator;
 
-public record ValidlyConfiguration
+internal record ValidlyConfiguration
 {
 	/// <summary>
 	/// When enabled, the Required validator is automatically added to all properties that are not nullable

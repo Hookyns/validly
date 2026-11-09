@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!--
+		Public API of the Validly source generator for use in third-party source generators.
+		Source generators cannot see the output of other generators, so a generator producing e.g. DTOs cannot let
+		Validly generate their validation; instead it calls this API and adds the returned source itself.
+		The generator sources are compiled in (not referenced), so this assembly does not clash with the Validly
+		analyzer loaded in the same compilation.
+	-->
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<PackageId>Validly.SourceGeneration</PackageId>
+		<Description>API of the Validly source generator for third-party source generators: generates the Validly validation source of a given type (e.g. copies the validation of an entity to a generated DTO).</Description>
+		<PackageTags>validly validation source-generator roslyn api</PackageTags>
+		<IsPackable>true</IsPackable>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<Nullable>enable</Nullable>
+		<LangVersion>12</LangVersion>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<IsRoslynComponent>true</IsRoslynComponent>
+		<DefineConstants>$(DefineConstants);VALIDLY_SOURCE_GENERATION_API</DefineConstants>
+		<!-- Internal shared generator sources are not documented as API -->
+		<NoWarn>$(NoWarn);CS1591</NoWarn>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile
+			Include="..\Validly.SourceGenerator\Validly.SourceGenerator\**\*.cs"
+			Exclude="..\Validly.SourceGenerator\Validly.SourceGenerator\obj\**;..\Validly.SourceGenerator\Validly.SourceGenerator\bin\**"
+			Link="Generator\%(RecursiveDir)%(Filename)%(Extension)"
+		/>
+		<Compile Include="..\Validly\Naming\ValidlyNamingPolicy.cs" Link="Shared\ValidlyNamingPolicy.cs" />
+		<Compile Include="..\Validly\Naming\NamingPolicyConverter.cs" Link="Shared\NamingPolicyConverter.cs" />
+		<AdditionalFiles Include="..\Validly.SourceGenerator\Validly.SourceGenerator\AnalyzerReleases.Shipped.md" />
+		<AdditionalFiles Include="..\Validly.SourceGenerator\Validly.SourceGenerator\AnalyzerReleases.Unshipped.md" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="..\Validly\assets\LICENSE" Pack="true" PackagePath="" />
+		<None Include="README.md" Pack="true" PackagePath="" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- The consuming generator brings its own Roslyn -->
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+		<PackageReference Include="JetBrains.Annotations" Version="2025.2.4" PrivateAssets="all" />
+		<PackageReference Include="PolySharp" Version="1.15.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>Validly.SourceGeneration.Tests</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+</Project>

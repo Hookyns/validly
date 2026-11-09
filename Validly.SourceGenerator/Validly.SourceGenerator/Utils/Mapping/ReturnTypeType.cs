@@ -1,7 +1,7 @@
 namespace Validly.SourceGenerator.Utils.Mapping;
 
 [Flags]
-public enum ReturnTypeType : short
+internal enum ReturnTypeType : short
 {
 	None = 0,
 

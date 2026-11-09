@@ -78,7 +78,7 @@ internal static class ConfigOptionsProvider
 	/// <summary>
 	/// Parses the configured naming policy; null when it is not configured or not recognized
 	/// </summary>
-	private static ValidlyNamingPolicy? ToNamingPolicy(string? value)
+	internal static ValidlyNamingPolicy? ToNamingPolicy(string? value)
 	{
 		if (value is null)
 		{
@@ -124,6 +124,10 @@ internal static class ConfigOptionsProvider
 	}
 }
 
+/// <summary>
+/// Raw ValidlyConfiguration MSBuild property; public only because of the XmlSerializer
+/// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public class RawValidlyConfiguration
 {
 	public string? AutoRequired { get; set; }

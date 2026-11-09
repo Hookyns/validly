@@ -106,7 +106,7 @@ internal static class SymbolMapper
 		return methodSymbol.Name;
 	}
 
-	public static PropertyProperties MapValidatableProperty(IPropertySymbol propertySymbol, SemanticModel semanticModel)
+	public static PropertyProperties MapValidatableProperty(IPropertySymbol propertySymbol, SemanticModel? semanticModel)
 	{
 		var attrs = propertySymbol.GetAttributes();
 		var attributes = attrs.Select(MapAttribute).ToArray();
@@ -135,10 +135,7 @@ internal static class SymbolMapper
 			PropertyTypeKind = propertySymbol.Type.TypeKind,
 			Nullable =
 				propertySymbol.NullableAnnotation == NullableAnnotation.Annotated
-				|| (
-					semanticModel.GetNullableContext(propertySymbol.Locations[0].SourceSpan.Start)
-					& NullableContext.Enabled
-				) != NullableContext.Enabled,
+				|| !IsNullableContextEnabled(propertySymbol, semanticModel),
 			PropertyIsOfValidatableType =
 				isReadableInstanceProperty
 				&& propertySymbol
@@ -152,6 +149,28 @@ internal static class SymbolMapper
 				attr.AttributeClass?.GetQualifiedName() == Consts.SkipItemsValidationAttributeQualifiedName
 			),
 		};
+	}
+
+	/// <summary>
+	/// Nullable context of the symbol's declaration; metadata symbols carry it in their annotations
+	/// </summary>
+	private static bool IsNullableContextEnabled(ISymbol symbol, SemanticModel? semanticModel)
+	{
+		var location = symbol.Locations.FirstOrDefault(static l => l.IsInSource);
+
+		if (location?.SourceTree is null || semanticModel is null)
+		{
+			// Oblivious (no annotation) means the nullable context was disabled
+			return symbol is not IPropertySymbol { NullableAnnotation: NullableAnnotation.None };
+		}
+
+		// Partial declarations may live in other files
+		var model =
+			location.SourceTree == semanticModel.SyntaxTree
+				? semanticModel
+				: semanticModel.Compilation.GetSemanticModel(location.SourceTree);
+
+		return (model.GetNullableContext(location.SourceSpan.Start) & NullableContext.Enabled) == NullableContext.Enabled;
 	}
 
 	/// <summary>
@@ -297,6 +316,8 @@ internal static class SymbolMapper
 			returnType.NullableAnnotation == NullableAnnotation.Annotated
 			|| (
 				semanticModel is not null
+				&& returnType.Locations[0].IsInSource
+				&& returnType.Locations[0].SourceTree == semanticModel.SyntaxTree
 				&& (
 					semanticModel.GetNullableContext(returnType.Locations[0].SourceSpan.Start) & NullableContext.Enabled
 				) != NullableContext.Enabled

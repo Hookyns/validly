@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Validly.SourceGenerator.Utils.SourceTexts.FileBuilders;
 
-public class SourceTextSectionBuilder
+internal class SourceTextSectionBuilder
 {
 	private static readonly string[] NewLineSeparators = new[] { Environment.NewLine };
 	private readonly List<StringBuilder> _lines = new() { new StringBuilder() };

@@ -2,7 +2,7 @@ using Validly.SourceGenerator.Utils.Mapping;
 
 namespace Validly.SourceGenerator.Builders;
 
-public class DependenciesTracker
+internal class DependenciesTracker
 {
 	private readonly HashSet<DependencyInjectionInfo> _services = new();
 

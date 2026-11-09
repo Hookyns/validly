@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Validly.SourceGenerator.Utils.Symbols;
 
-public class CustomSymbolVisitor
+internal class CustomSymbolVisitor
 {
 	public static ImmutableArray<INamedTypeSymbol> GetNamedTypes(
 		IAssemblySymbol assemblySymbol,

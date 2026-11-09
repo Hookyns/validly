@@ -128,8 +128,9 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			// .SetNamespace(properties.Object.Namespace)
 			.Partial();
 
-		// Detached objects do not implement Validly interfaces
-		if (!properties.Object.IsDetached)
+		// Detached objects do not implement Validly interfaces; unless they inherit them from the base, then they
+		// must re-implement them (the inherited explicit implementation would validate the base only)
+		if (EmitsValidlyInterfaces(properties.Object))
 		{
 			validatorClassBuilder
 				.AddInterfaces(Consts.IValidatableGlobalRef)
@@ -470,7 +471,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				if (this.{{property.PropertyName}} is {} nestedObject{{nestedIndex}})
 				{
 					context.SetObject(nestedObject{{nestedIndex}});
-					nestedValidationResult{{nestedIndex}} = await {{CoreCallTarget(property, $"nestedObject{nestedIndex}")}}.{{Consts.ValidateCoreMethodName}}(context, serviceProvider, ct);
+					nestedValidationResult{{nestedIndex}} = await {{CoreCall(property, $"nestedObject{nestedIndex}")}};
 					nestedPropertiesCount += (({{Consts.InternalValidationResultGlobalRef}})nestedValidationResult{{nestedIndex}}).GetPropertiesCount();
 				}
 				"""
@@ -510,7 +511,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				}
 
 				context.SetObject(collectionItem{{n}});
-				var collectionItemResult{{n}} = await {{CoreCallTarget(property, $"collectionItem{n}")}}.{{Consts.ValidateCoreMethodName}}(context, serviceProvider, ct);
+				var collectionItemResult{{n}} = await {{CoreCall(property, $"collectionItem{n}")}};
 
 				// Only invalid items are reported
 				if (collectionItemResult{{n}}.IsSuccess)
@@ -637,7 +638,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		validateMethodFilePart
 			.AppendLine("\t\tvar serviceCancellationToken = ct;")
 			.AppendLine("\t\tvar serviceValidationContext = context;")
-			.AppendLine($"\t\tvar serviceValidationResult = ({Consts.ValidationResultGlobalRef})result;");
+			.AppendLine($"\t\tvar serviceValidationResult = ({Consts.ValidationResultGlobalRef})result;")
+			.AppendLine($"\t\tvar serviceExtendableValidationResult = ({Consts.ExtendableValidationResultGlobalRef})result;");
 
 		if (level.Dependencies.HasDependencies)
 		{
@@ -694,9 +696,37 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	/// Target of the core method call of a nested object / collection item; through the interface (polymorphic),
 	/// or directly for detached objects (they have no interface)
 	/// </summary>
-	private static string CoreCallTarget(PropertyProperties property, string variable)
+	private static string CoreCall(PropertyProperties property, string variable)
 	{
-		return property.NestedTypeIsDetached ? variable : $"(({Consts.InternalValidatableGlobalRef}){variable})";
+		string call = $"{Consts.ValidateCoreMethodName}(context, serviceProvider, ct)";
+
+		// Detached type: its runtime type may be a derived non-detached type; the interface keeps it polymorphic
+		return property.NestedTypeIsDetached
+			? $"({variable} is {Consts.InternalValidatableGlobalRef} {variable}Core ? {variable}Core.{call} : {variable}.{call})"
+			: $"(({Consts.InternalValidatableGlobalRef}){variable}).{call}";
+	}
+
+	/// <summary>
+	/// The object implements IValidatable and IInternalValidatable
+	/// </summary>
+	private static bool EmitsValidlyInterfaces(ObjectProperties obj)
+	{
+		return !obj.IsDetached || InheritsValidlyInterfaces(obj.BaseObject);
+	}
+
+	private static bool InheritsValidlyInterfaces(BaseObjectProperties? baseObject)
+	{
+		if (baseObject is null)
+		{
+			return false;
+		}
+
+		if (!baseObject.IsFromSource || baseObject.Object is null)
+		{
+			return baseObject.ImplementsValidlyInterfaces;
+		}
+
+		return !baseObject.Object.IsDetached || InheritsValidlyInterfaces(baseObject.Object.BaseObject);
 	}
 
 	/// <summary>
@@ -705,7 +735,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	/// </summary>
 	private static string CreateDetachedRegistration(ObjectProperties obj, HierarchyFlags flags)
 	{
-		if (!obj.IsDetached || !obj.SupportsModuleInitializer || obj.TypeParameters.GetArray()?.Length > 0)
+		if (EmitsValidlyInterfaces(obj) || !obj.SupportsModuleInitializer || obj.TypeParameters.GetArray()?.Length > 0)
 		{
 			return string.Empty;
 		}

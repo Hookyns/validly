@@ -104,7 +104,7 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 						Detail = error.Message,
 						Code = error.Code,
 						Args = error.Args,
-						NamedArgs = error.NamedArgs,
+						NamedArgs = ToDictionary(error.NamedArgs),
 						Pointer = $"#/{prop.GetJsonPointerPath(namingPolicy)}",
 						FieldName = prop.PropertyDisplayName,
 					})
@@ -115,7 +115,7 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 						Detail = error.Message,
 						Code = error.Code,
 						Args = error.Args,
-						NamedArgs = error.NamedArgs,
+						NamedArgs = ToDictionary(error.NamedArgs),
 						Pointer = "#",
 						FieldName = null,
 					})
@@ -208,6 +208,26 @@ public class ValidationResult : IDisposable, IInternalValidationResult
 	/// <summary>
 	/// "namedArgs" member of the problem details JSON error; empty when the message has no named arguments
 	/// </summary>
+	/// <summary>
+	/// Named arguments as an object (serialized as {"min": 3}); null when there are none
+	/// </summary>
+	private static IReadOnlyDictionary<string, object?>? ToDictionary(IReadOnlyList<KeyValuePair<string, object?>>? namedArgs)
+	{
+		if (namedArgs is null || namedArgs.Count == 0)
+		{
+			return null;
+		}
+
+		var dictionary = new Dictionary<string, object?>(namedArgs.Count);
+
+		foreach (var namedArg in namedArgs)
+		{
+			dictionary[namedArg.Key] = namedArg.Value;
+		}
+
+		return dictionary;
+	}
+
 	private static string NamedArgsJsonMember(ValidationMessage error)
 	{
 		string namedArgsJson = error.NamedArgsJson;

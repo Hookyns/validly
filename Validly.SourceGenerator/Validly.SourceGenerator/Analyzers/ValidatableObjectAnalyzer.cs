@@ -110,7 +110,10 @@ public sealed class ValidatableObjectAnalyzer : DiagnosticAnalyzer
 	private static void AnalyzeCustomValidation(SymbolAnalysisContext context, INamedTypeSymbol type, IPropertySymbol property)
 	{
 		string methodName = Consts.CustomValidationMethodPrefix + property.Name;
-		var method = type.GetMembers(methodName).OfType<IMethodSymbol>().FirstOrDefault(static m => m.MethodKind is MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation);
+		// Declared or inherited
+		var method = GetMembersIncludingBase(type, methodName)
+			.OfType<IMethodSymbol>()
+			.FirstOrDefault(static m => m.MethodKind is MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation);
 
 		// Explicit implementation of the generated interface is named "I...CustomValidation.ValidateX"
 		method ??= type.GetMembers()
@@ -137,7 +140,7 @@ public sealed class ValidatableObjectAnalyzer : DiagnosticAnalyzer
 			);
 		}
 
-		if (!IsSupportedValidationReturnType(method.ReturnType))
+		if (!IsSupportedValidationReturnType(method.ReturnType, allowAwaitedValidationResult: false))
 		{
 			context.ReportDiagnostic(
 				Diagnostic.Create(
@@ -154,7 +157,7 @@ public sealed class ValidatableObjectAnalyzer : DiagnosticAnalyzer
 
 	private static void AnalyzeValidator(SymbolAnalysisContext context, INamedTypeSymbol type)
 	{
-		var isValid = type.GetMembers(Consts.IsValidMethodName).OfType<IMethodSymbol>().FirstOrDefault();
+		var isValid = GetMembersIncludingBase(type, Consts.IsValidMethodName).OfType<IMethodSymbol>().FirstOrDefault();
 
 		if (isValid is null || isValid.Parameters.Length == 0)
 		{
@@ -164,7 +167,7 @@ public sealed class ValidatableObjectAnalyzer : DiagnosticAnalyzer
 			return;
 		}
 
-		if (!IsSupportedValidationReturnType(isValid.ReturnType))
+		if (!IsSupportedValidationReturnType(isValid.ReturnType, allowAwaitedValidationResult: false))
 		{
 			context.ReportDiagnostic(
 				Diagnostic.Create(
@@ -232,14 +235,14 @@ public sealed class ValidatableObjectAnalyzer : DiagnosticAnalyzer
 			return true;
 		}
 
-		return IsSupportedValidationReturnType(hook.ReturnType);
+		return IsSupportedValidationReturnType(hook.ReturnType, allowAwaitedValidationResult: true);
 	}
 
 	/// <summary>
 	/// ValidationResult, ValidationMessage, Validation, IEnumerable&lt;ValidationMessage&gt;,
 	/// IAsyncEnumerable&lt;ValidationMessage&gt;, Task/ValueTask of ValidationResult/ValidationMessage/Validation
 	/// </summary>
-	private static bool IsSupportedValidationReturnType(ITypeSymbol returnType)
+	private static bool IsSupportedValidationReturnType(ITypeSymbol returnType, bool allowAwaitedValidationResult)
 	{
 		if (IsValidlyResultType(returnType))
 		{
@@ -256,7 +259,9 @@ public sealed class ValidatableObjectAnalyzer : DiagnosticAnalyzer
 
 		return definition switch
 		{
-			"System.Threading.Tasks.Task<TResult>" or "System.Threading.Tasks.ValueTask<TResult>" => IsValidlyResultType(argument),
+			"System.Threading.Tasks.Task<TResult>" or "System.Threading.Tasks.ValueTask<TResult>" =>
+				IsValidlyResultType(argument)
+				&& (allowAwaitedValidationResult || argument.ToDisplayString().TrimEnd('?') != "Validly.ValidationResult"),
 			"System.Collections.Generic.IEnumerable<T>" or "System.Collections.Generic.IAsyncEnumerable<T>" =>
 				argument.ToDisplayString().TrimEnd('?') == "Validly.ValidationMessage",
 			_ => false,
@@ -274,6 +279,17 @@ public sealed class ValidatableObjectAnalyzer : DiagnosticAnalyzer
 	private static bool IsTaskLike(INamedTypeSymbol type)
 	{
 		return type.ToDisplayString() is "System.Threading.Tasks.Task" or "System.Threading.Tasks.ValueTask";
+	}
+
+	private static IEnumerable<ISymbol> GetMembersIncludingBase(INamedTypeSymbol type, string name)
+	{
+		for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType)
+		{
+			foreach (var member in current.GetMembers(name))
+			{
+				yield return member;
+			}
+		}
 	}
 
 	private static bool HasAttribute(ISymbol symbol, string qualifiedName)

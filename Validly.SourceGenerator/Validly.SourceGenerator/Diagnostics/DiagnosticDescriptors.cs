@@ -81,7 +81,7 @@ internal static class DiagnosticDescriptors
 	public static readonly DiagnosticDescriptor UnsupportedValidationReturnType = new(
 		id: "VLY0016",
 		title: "Unsupported return type of a validation method",
-		messageFormat: "The return type '{1}' of '{0}' is not supported; use ValidationMessage, Validation, ValidationResult, IEnumerable<ValidationMessage>, IAsyncEnumerable<ValidationMessage> or Task/ValueTask of ValidationMessage, Validation or ValidationResult",
+		messageFormat: "The return type '{1}' of '{0}' is not supported; use ValidationMessage, Validation, ValidationResult, IEnumerable<ValidationMessage>, IAsyncEnumerable<ValidationMessage> or Task/ValueTask of ValidationMessage or Validation",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true

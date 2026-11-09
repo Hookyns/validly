@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>BenchmarkRun-joined-2026-11-09-01-27-16</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26200.9457/25H2/2025Update/HudsonValley2)
+AMD Ryzen 7 PRO 8840HS w/ Radeon 780M Graphics 3.30GHz, 1 CPU, 16 logical and 8 physical cores
+.NET SDK 11.0.100-rc.2.26504.105
+  [Host]    : .NET 10.0.12 (10.0.12, 10.0.1226.42308), X64 RyuJIT x86-64-v4
+  .NET 10.0 : .NET 10.0.12 (10.0.12, 10.0.1226.42308), X64 RyuJIT x86-64-v4
+</code></pre>
+<pre><code>Job=.NET 10.0  Runtime=.NET 10.0  IterationCount=10  
+WarmupCount=5  
+</code></pre>
+
+<table>
+<thead><tr><th>Type                    </th><th>Method                       </th><th>Items</th><th>TenPercentInvalid</th><th>Mean   </th><th>Error </th><th>StdDev</th><th>Median </th><th>Gen0</th><th>Gen1</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>IntegrationBenchmark</td><td>SealedFlat_Valid</td><td>?</td><td>?</td><td>118.57 ns</td><td>13.066 ns</td><td>8.642 ns</td><td>115.79 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>IntegrationBenchmark</td><td>SealedFlat_Invalid</td><td>?</td><td>?</td><td>108.56 ns</td><td>2.290 ns</td><td>1.197 ns</td><td>108.43 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>IntegrationBenchmark</td><td>Flat_Valid</td><td>?</td><td>?</td><td>83.62 ns</td><td>9.207 ns</td><td>6.090 ns</td><td>81.95 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>IntegrationBenchmark</td><td>Flat_Invalid</td><td>?</td><td>?</td><td>86.14 ns</td><td>4.071 ns</td><td>2.422 ns</td><td>85.28 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>IntegrationBenchmark</td><td>Nested_Valid</td><td>?</td><td>?</td><td>286.98 ns</td><td>32.070 ns</td><td>21.212 ns</td><td>289.65 ns</td><td>0.0172</td><td>-</td><td>144 B</td>
+</tr><tr><td>IntegrationBenchmark</td><td>Nested_Invalid</td><td>?</td><td>?</td><td>272.28 ns</td><td>6.900 ns</td><td>4.106 ns</td><td>271.81 ns</td><td>0.0172</td><td>-</td><td>144 B</td>
+</tr><tr><td>IntegrationBenchmark</td><td>Nested_Invalid_ProblemDetailsJson</td><td>?</td><td>?</td><td>1,846.42 ns</td><td>397.321 ns</td><td>262.804 ns</td><td>1,737.70 ns</td><td>1.2646</td><td>0.0076</td><td>10584 B</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_SixPropertiesFlat_Valid</td><td>0</td><td>False</td><td>138.24 ns</td><td>15.666 ns</td><td>10.362 ns</td><td>139.51 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Valid</td><td>0</td><td>False</td><td>307.57 ns</td><td>65.739 ns</td><td>39.120 ns</td><td>306.88 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Invalid</td><td>0</td><td>False</td><td>320.45 ns</td><td>23.789 ns</td><td>14.157 ns</td><td>316.98 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Collection</td><td>0</td><td>False</td><td>71.88 ns</td><td>34.193 ns</td><td>17.883 ns</td><td>71.83 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_SixPropertiesFlat_Valid</td><td>0</td><td>True</td><td>92.89 ns</td><td>12.902 ns</td><td>7.678 ns</td><td>90.93 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Valid</td><td>0</td><td>True</td><td>195.32 ns</td><td>5.627 ns</td><td>3.349 ns</td><td>194.49 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Invalid</td><td>0</td><td>True</td><td>283.68 ns</td><td>163.192 ns</td><td>97.113 ns</td><td>214.31 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Collection</td><td>0</td><td>True</td><td>82.20 ns</td><td>7.893 ns</td><td>5.221 ns</td><td>83.01 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_SixPropertiesFlat_Valid</td><td>10</td><td>False</td><td>113.05 ns</td><td>14.373 ns</td><td>9.507 ns</td><td>110.71 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Valid</td><td>10</td><td>False</td><td>287.51 ns</td><td>32.372 ns</td><td>21.412 ns</td><td>282.19 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Invalid</td><td>10</td><td>False</td><td>301.36 ns</td><td>23.947 ns</td><td>15.840 ns</td><td>298.04 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Collection</td><td>10</td><td>False</td><td>1,289.71 ns</td><td>34.534 ns</td><td>20.550 ns</td><td>1,292.34 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_SixPropertiesFlat_Valid</td><td>10</td><td>True</td><td>125.55 ns</td><td>25.991 ns</td><td>17.192 ns</td><td>130.18 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Valid</td><td>10</td><td>True</td><td>300.75 ns</td><td>45.592 ns</td><td>30.157 ns</td><td>295.73 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Invalid</td><td>10</td><td>True</td><td>341.82 ns</td><td>26.678 ns</td><td>17.646 ns</td><td>336.23 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Collection</td><td>10</td><td>True</td><td>1,116.73 ns</td><td>146.323 ns</td><td>96.784 ns</td><td>1,069.13 ns</td><td>0.0324</td><td>-</td><td>272 B</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_SixPropertiesFlat_Valid</td><td>1000</td><td>False</td><td>111.20 ns</td><td>11.885 ns</td><td>7.861 ns</td><td>109.69 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Valid</td><td>1000</td><td>False</td><td>282.57 ns</td><td>32.100 ns</td><td>21.232 ns</td><td>287.05 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Invalid</td><td>1000</td><td>False</td><td>229.71 ns</td><td>12.066 ns</td><td>7.180 ns</td><td>226.60 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Collection</td><td>1000</td><td>False</td><td>75,775.48 ns</td><td>2,334.266 ns</td><td>1,543.973 ns</td><td>75,830.33 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_SixPropertiesFlat_Valid</td><td>1000</td><td>True</td><td>87.80 ns</td><td>1.163 ns</td><td>0.769 ns</td><td>87.97 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Valid</td><td>1000</td><td>True</td><td>237.83 ns</td><td>30.151 ns</td><td>17.942 ns</td><td>239.40 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Inheritance_ThreePlusThree_Invalid</td><td>1000</td><td>True</td><td>261.07 ns</td><td>41.255 ns</td><td>27.287 ns</td><td>256.87 ns</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>InheritanceCollectionBenchmark</td><td>Collection</td><td>1000</td><td>True</td><td>120,162.11 ns</td><td>6,871.930 ns</td><td>3,594.152 ns</td><td>121,631.01 ns</td><td>3.6621</td><td>0.2441</td><td>31205 B</td>
+</tr></tbody></table>
+</body>
+</html>

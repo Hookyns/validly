@@ -35,4 +35,9 @@ internal record BaseObjectProperties
 	/// The (metadata) ancestor has the synchronous Validate() method
 	/// </summary>
 	public required bool HasValidateMethod { get; init; }
+
+	/// <summary>
+	/// The (metadata) ancestor implements the Validly interfaces (it is not detached)
+	/// </summary>
+	public bool ImplementsValidlyInterfaces { get; init; }
 }

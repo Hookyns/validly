@@ -122,7 +122,7 @@ public class ValidationCodesTests
 
 		var detail = result.GetProblemDetails().Errors.Single();
 		Assert.Equal("BusinessRules.InsufficientBalance", detail.Code);
-		Assert.Equal("minimum", detail.NamedArgs![0].Key);
+		Assert.True(detail.NamedArgs!.ContainsKey("minimum"));
 
 		using var json = JsonDocument.Parse(result.GetProblemDetailsJson());
 		var namedArgs = json.RootElement.GetProperty("errors")[0].GetProperty("namedArgs");

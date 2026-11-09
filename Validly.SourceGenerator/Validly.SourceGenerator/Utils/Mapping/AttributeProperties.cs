@@ -29,4 +29,9 @@ internal record AttributeProperties
 	/// Arguments passed to the attribute
 	/// </summary>
 	public required EquatableArray<string> Arguments { get; init; }
+
+	/// <summary>
+	/// Named arguments (properties) of the attribute; "Name = value"
+	/// </summary>
+	public EquatableArray<string> NamedArguments { get; init; } = EquatableArray<string>.Empty;
 }

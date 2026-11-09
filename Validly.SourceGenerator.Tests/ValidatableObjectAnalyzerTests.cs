@@ -59,7 +59,38 @@ public class ValidatableObjectAnalyzerTests
 		Assert.Empty(diagnostics);
 	}
 
+	[Fact]
+	public void InheritedCustomValidationAndIsValid_NoDiagnostics()
+	{
+		var diagnostics = Analyze(
+			"""
+			public class BaseWithValidation
+			{
+				public ValidationMessage? ValidateCode() => null;
+			}
+
+			[Validatable]
+			public partial class Derived : BaseWithValidation
+			{
+				[CustomValidation]
+				public string? Code { get; set; }
+			}
+
+			public abstract class ValidatorBase : Attribute
+			{
+				public ValidationMessage? IsValid(string? value) => null;
+			}
+
+			[Validator]
+			public sealed class InheritedIsValidAttribute : ValidatorBase { }
+			"""
+		);
+
+		Assert.Empty(diagnostics);
+	}
+
 	[Theory]
+	[InlineData("[Validatable] public partial class C { [CustomValidation] public string? Name { get; set; } public Task<ValidationResult> ValidateName() => null!; }", "VLY0016")]
 	[InlineData("[Validatable] public class NotPartial { }", "VLY0010")]
 	[InlineData("public partial class Outer { [Validatable] public partial class Nested { } }", "VLY0011")]
 	[InlineData("[Validatable] public partial class H { private bool AfterValidate() => true; }", "VLY0012")]

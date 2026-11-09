@@ -73,10 +73,45 @@ internal static class SymbolMapper
 			var constant = attributeData.ConstructorArguments.Single();
 			var key = GenerateKeyFromConstant(constant);
 
-			return new KeyedDependencyInjectionInfo(parameter.Type.Name, ToServiceTypeName(parameter.Type), key);
+			return new KeyedDependencyInjectionInfo(
+				ToServiceVariableName(parameter.Type) + "_" + ToIdentifier(key),
+				ToServiceTypeName(parameter.Type),
+				key
+			);
 		}
 
-		return new DependencyInjectionInfo(parameter.Type.Name, ToServiceTypeName(parameter.Type));
+		return new DependencyInjectionInfo(ToServiceVariableName(parameter.Type), ToServiceTypeName(parameter.Type));
+	}
+
+	/// <summary>
+	/// Name used for the generated variable of the dependency (service{Name}); unique per type.
+	/// Context types (CancellationToken, ValidationContext, ValidationResult) keep their simple names.
+	/// </summary>
+	private static string ToServiceVariableName(ITypeSymbol type)
+	{
+		string fullName = type.WithNullableAnnotation(NullableAnnotation.NotAnnotated).ToDisplayString();
+
+		if (
+			fullName
+			is "System.Threading.CancellationToken"
+				or Consts.ValidationContextQualifiedName
+				or Consts.ValidationResultQualifiedName
+				or Consts.ExtendableValidationResultQualifiedName
+		)
+		{
+			return type.Name;
+		}
+
+		// Simple name when it is not generic; otherwise the full name turned into an identifier
+		return type is INamedTypeSymbol { IsGenericType: false } && type.ContainingNamespace is { IsGlobalNamespace: false }
+			? type.Name + "_" + ToIdentifier(type.ContainingNamespace.ToDisplayString())
+			: ToIdentifier(fullName);
+	}
+
+	private static string ToIdentifier(string value)
+	{
+		var chars = value.Select(static c => char.IsLetterOrDigit(c) ? c : '_').ToArray();
+		return new string(chars);
 	}
 
 	private static string GenerateKeyFromConstant(TypedConstant typedConstant)
@@ -267,14 +302,9 @@ internal static class SymbolMapper
 		{
 			QualifiedName = arg.AttributeClass?.GetQualifiedName() ?? string.Empty,
 			// TODO: Keep this simple. Move the mapping logic to Generate method; keep this as simple and fast as possible.
-			Arguments = new EquatableArray<string>(
-				arg.ConstructorArguments.Select(ValueToCode)
-					.Concat(
-						arg.NamedArguments.Select(x =>
-							$"{x.Key} = {x.Value.Value ?? $"[{string.Join(", ", x.Value.Values)}]"}"
-						)
-					)
-					.ToArray()
+			Arguments = new EquatableArray<string>(arg.ConstructorArguments.Select(ValueToCode).ToArray()),
+			NamedArguments = new EquatableArray<string>(
+				arg.NamedArguments.Select(x => $"{x.Key} = {ValueToCode(x.Value)}").ToArray()
 			),
 		};
 	}
@@ -300,6 +330,22 @@ internal static class SymbolMapper
 			SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier
 		);
 
+	private static string DoubleToCode(double value)
+	{
+		if (double.IsNaN(value)) return "double.NaN";
+		if (double.IsPositiveInfinity(value)) return "double.PositiveInfinity";
+		if (double.IsNegativeInfinity(value)) return "double.NegativeInfinity";
+		return value.ToString("R", CultureInfo.InvariantCulture) + "d";
+	}
+
+	private static string FloatToCode(float value)
+	{
+		if (float.IsNaN(value)) return "float.NaN";
+		if (float.IsPositiveInfinity(value)) return "float.PositiveInfinity";
+		if (float.IsNegativeInfinity(value)) return "float.NegativeInfinity";
+		return value.ToString("R", CultureInfo.InvariantCulture) + "f";
+	}
+
 	private static string ValueToCode(TypedConstant constant)
 	{
 		if (constant.IsNull)
@@ -320,8 +366,11 @@ internal static class SymbolMapper
 				string s => SymbolDisplay.FormatLiteral(s, quote: true),
 				char c => SymbolDisplay.FormatLiteral(c, quote: true),
 				bool b => b.ToString().ToLowerInvariant(),
-				double d => d.ToString(new NumberFormatInfo { NumberDecimalSeparator = "." }),
-				float f => f.ToString(new NumberFormatInfo { NumberDecimalSeparator = "." }),
+				double d => DoubleToCode(d),
+				float f => FloatToCode(f),
+				long l => $"{l}L",
+				ulong ul => $"{ul}UL",
+				uint ui => $"{ui}U",
 				_ => constant.Value?.ToString() ?? "null",
 			},
 			_ => constant.Value?.ToString() ?? "null",

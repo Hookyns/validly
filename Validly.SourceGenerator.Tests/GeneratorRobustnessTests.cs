@@ -149,7 +149,7 @@ public class GeneratorRobustnessTests
 
 		string generated = string.Join("\n", result.GeneratedSources.Select(s => s.SourceText.ToString()));
 		Assert.Matches(@"GetRequiredService<global::[\w.]*IForbiddenWords>\(serviceProvider\)", generated);
-		Assert.Contains("IsValid(Name, serviceIForbiddenWords)", generated);
+		Assert.Matches(@"IsValid\(Name, serviceIForbiddenWords\w*\)", generated);
 	}
 
 	[Fact]
@@ -211,5 +211,51 @@ public class GlobalUsingsTests
 		);
 
 		Assert.DoesNotContain("global using", result.GeneratedSources.Single().SourceText.ToString());
+	}
+}
+
+public class GeneratorReviewRegressionTests
+{
+	[Fact]
+	public void ServicesWithTheSameSimpleName_AndAttributeArguments_Compile()
+	{
+		GeneratorAssert.CompilesWithoutErrors(
+			"""
+			using Validly;
+			using Validly.Validators;
+
+			namespace First { public interface IRepo<T> { bool Has(T value); } public interface IStore { } }
+			namespace Second { public interface IStore { } }
+
+			namespace App
+			{
+				[Validator]
+				[System.AttributeUsage(System.AttributeTargets.Property)]
+				public sealed class MaxFloatAttribute(float max) : System.Attribute
+				{
+					public string? Label { get; set; }
+					public double Ratio { get; set; }
+					public ValidationMessage? IsValid(float value) => value > max ? new ValidationMessage(Label ?? "x", "Max") : null;
+				}
+
+				[Validatable]
+				public partial class Request
+				{
+					[MaxFloat(1.5f, Label = "a \"b\" c", Ratio = double.NaN)]
+					public float Value { get; set; }
+
+					[Validly.Validators.CustomValidation]
+					public string? A { get; set; }
+
+					[Validly.Validators.CustomValidation]
+					public string? B { get; set; }
+
+					public ValidationMessage? ValidateA(First.IRepo<int> ints, First.IStore store, ExtendableValidationResult result) => null;
+
+					public ValidationMessage? ValidateB(First.IRepo<string> strings, Second.IStore store) => null;
+				}
+			}
+			"""
+		);
 	}
 }

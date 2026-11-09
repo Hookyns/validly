@@ -29,7 +29,7 @@ public class ValidationErrorDetail
 	/// <summary>
 	/// Named arguments, e.g. ("min", 5), ("max", 20); null when the message has none
 	/// </summary>
-	public IReadOnlyList<KeyValuePair<string, object?>>? NamedArgs { get; init; }
+	public IReadOnlyDictionary<string, object?>? NamedArgs { get; init; }
 
 	/// <summary>
 	/// Indicates a location of the data causing the validation error

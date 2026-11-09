@@ -6,7 +6,11 @@ namespace Validly.Naming;
 /// <remarks>
 /// This enum is shared with the source generator, so the names can be converted at compile time.
 /// </remarks>
+#if VALIDLY_SOURCE_GENERATION_API
+internal enum ValidlyNamingPolicy
+#else
 public enum ValidlyNamingPolicy
+#endif
 {
 	/// <summary>
 	/// Property names are used as they are declared

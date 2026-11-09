@@ -164,6 +164,9 @@ internal static class ValidatableObjectIncrementalValueProvider
 				IsFromSource = false,
 				Object = null,
 				HasCoreMethod = coreMethod is not null,
+				ImplementsValidlyInterfaces = baseType.AllInterfaces.Any(static i =>
+					i.ToDisplayString() == "Validly.IInternalValidatable"
+				),
 				RequiresServiceProvider = validateAsyncWithServiceProvider is not null,
 				IsAsync = isAsync,
 				HasValidateMethod =

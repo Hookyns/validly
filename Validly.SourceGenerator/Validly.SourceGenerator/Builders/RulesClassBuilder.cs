@@ -36,7 +36,12 @@ internal class RulesClassBuilder
 			tupleTypeArguments.Add($"global::{validator.QualifiedName}");
 
 			// Creation of validator instance
-			validatorInstances.Add($"new global::{validator.QualifiedName}({string.Join(", ", attribute.Arguments)})");
+			// Named arguments of the attribute are its properties
+			var namedArguments = attribute.NamedArguments.GetArray() ?? Array.Empty<string>();
+			validatorInstances.Add(
+				$"new global::{validator.QualifiedName}({string.Join(", ", attribute.Arguments)})"
+					+ (namedArguments.Length == 0 ? string.Empty : $" {{ {string.Join(", ", namedArguments)} }}")
+			);
 		}
 
 		// Add null if there is only one validator; just because of tuple syntax - bracket syntax requires more than one element

@@ -35,7 +35,7 @@ public sealed class LessThanAttribute : Attribute
 	}
 
 	private ValidationMessage CreateMessage() =>
-		new("Must be less than {0}.", ValidationMessagesHelper.GenerateResourceKey(nameof(LessThanAttribute)), _max);
+		ValidationMessagesHelper.CreateMessage(ValidationCodes.LessThan, LegacyValidationCodes.LessThan, [ValidationMessagesHelper.Arg("max", _max)], "Must be less than {0}.", _max);
 
 	/// <summary>
 	/// Validate the value

@@ -17,8 +17,7 @@ public sealed class MinLengthAttribute : Attribute
 	public MinLengthAttribute(int minLength)
 	{
 		_minLength = minLength;
-		_message = ValidationMessagesHelper.CreateMessage(
-			nameof(MinLengthAttribute),
+		_message = ValidationMessagesHelper.CreateMessage(ValidationCodes.MinLength, LegacyValidationCodes.MinLength, [ValidationMessagesHelper.Arg("min", minLength)],
 			"Must be at least {0} characters long.",
 			minLength
 		);

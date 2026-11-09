@@ -36,9 +36,7 @@ public sealed class GreaterThanOrEqualAttribute : Attribute
 
 	private ValidationMessage CreateMessage()
 	{
-		return new ValidationMessage(
-			"Must be greater than or equal to {0}.",
-			ValidationMessagesHelper.GenerateResourceKey(nameof(GreaterThanOrEqualAttribute)),
+		return ValidationMessagesHelper.CreateMessage(ValidationCodes.GreaterThanOrEqual, LegacyValidationCodes.GreaterThanOrEqual, [ValidationMessagesHelper.Arg("min", _min)], "Must be greater than or equal to {0}.",
 			_min
 		);
 	}

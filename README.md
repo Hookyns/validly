@@ -87,6 +87,57 @@ runtime instead: `Validly.Extensions.AspNetCore` reads it from the configured `J
 `GetProblemDetailsJson` take an optional `PropertyNamingPolicy`. Note that ASP.NET Minimal APIs serialize with
 camelCase by default.
 
+## Error codes and arguments
+Every validation message has a stable, public `Code` that API clients can depend on (and use as a localization key),
+plus its arguments, both positional (`Args`) and named (`NamedArgs`):
+
+```json
+{
+  "detail": "Length must be between {0} and {1}.",
+  "code": "Validations.LengthBetween",
+  "args": [5, 20],
+  "namedArgs": { "min": 5, "max": 20 },
+  "pointer": "#/userName",
+  "fieldName": "UserName"
+}
+```
+
+Built-in codes follow `Validations.{Validator}[.{Reason}]` and are available as constants in `ValidationCodes`:
+
+| Validator | Code | Named arguments |
+|---|---|---|
+| `Required` | `Validations.Required` | |
+| `NotEmpty` | `Validations.NotEmpty` | |
+| `InEnum` | `Validations.InEnum` | |
+| `EmailAddress` | `Validations.EmailAddress` | |
+| `LengthBetween` | `Validations.LengthBetween` | `min`, `max` |
+| `MinLength` / `MaxLength` | `Validations.MinLength` / `Validations.MaxLength` | `min` / `max` |
+| `Match` | `Validations.Match` | `pattern` |
+| `Password` | `Validations.Password.Length` / `.SpecialChar` / `.UpperCase` / `.Digit` | `min` |
+| `Between` / `ExclusiveBetween` | `Validations.Between` / `Validations.ExclusiveBetween` | `min`, `max` |
+| `GreaterThan` / `GreaterThanOrEqual` | `Validations.GreaterThan` / `Validations.GreaterThanOrEqual` | `min` |
+| `LessThan` / `LessThanOrEqual` | `Validations.LessThan` / `Validations.LessThanOrEqual` | `max` |
+| `CollectionSizeBetween` | `Validations.CollectionSizeBetween` | `min`, `max` |
+| `MinCollectionSize` / `MaxCollectionSize` | `Validations.MinCollectionSize` / `Validations.MaxCollectionSize` | `min` / `max` |
+
+Custom validators and business rules can use the same mechanism:
+
+```csharp
+return new ValidationMessage("Balance must be at least {0}.", "BusinessRules.InsufficientBalance", minimum)
+{
+    NamedArgs = [new("minimum", minimum)]
+};
+```
+
+Need the Validly 1.x codes (`Validly.Validations.LengthBetween.Error`, ...) and the `resourceKey` JSON property? Enable
+the compatibility switch; the two modes are never mixed:
+
+```xml
+<PropertyGroup>
+    <ValidlyLegacyValidationCodes>true</ValidlyLegacyValidationCodes>
+</PropertyGroup>
+```
+
 ## Nested objects, collections and inheritance
 Properties of a `[Validatable]` type are validated as nested objects (`Address/Street`).
 

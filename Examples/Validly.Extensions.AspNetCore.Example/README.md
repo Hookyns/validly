@@ -37,30 +37,41 @@ With single device (MD Ryzen 7 PRO 8840HS, 1 CPU, 16 logical and 8 physical core
   "errors": [
     {
       "detail": "Must be between {0} and {1}.",
-      "resourceKey": "Validly.Validations.Between.Error",
+      "code": "Validations.Between",
       "args": [
         18,
         120
       ],
+      "namedArgs": {
+        "min": 18,
+        "max": 120
+      },
       "pointer": "#/age",
       "fieldName": "Age"
     },
     {
       "detail": "Must be at least {0} characters long.",
-      "resourceKey": "Validly.Validations.MinLength.Error",
+      "code": "Validations.MinLength",
       "args": [
         12
       ],
+      "namedArgs": {
+        "min": 12
+      },
       "pointer": "#/password",
       "fieldName": "Password"
     },
     {
       "detail": "Length must be between {0} and {1}.",
-      "resourceKey": "Validly.Validations.LengthBetween.Error",
+      "code": "Validations.LengthBetween",
       "args": [
         5,
         20
       ],
+      "namedArgs": {
+        "min": 5,
+        "max": 20
+      },
       "pointer": "#/username",
       "fieldName": "Username"
     }

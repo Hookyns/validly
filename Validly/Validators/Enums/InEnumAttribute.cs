@@ -10,9 +10,7 @@ namespace Validly.Validators;
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class InEnumAttribute : Attribute
 {
-	private static readonly ValidationMessage ValidationMessage = new(
-		"Must be one of the defined enum members.",
-		"Validly.Validations.InEnum"
+	private static readonly ValidationMessage ValidationMessage = ValidationMessagesHelper.CreateMessage(ValidationCodes.InEnum, LegacyValidationCodes.InEnum, null, "Must be one of the defined enum members."
 	);
 
 	/// <summary>

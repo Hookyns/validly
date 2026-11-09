@@ -40,7 +40,7 @@ public sealed class Validation
 	/// <returns></returns>
 	public static Validation Error(
 		[StringSyntax(StringSyntaxAttribute.CompositeFormat)] string message,
-		string resourceKey,
+		string code,
 		params object?[] args
-	) => new() { Message = new ValidationMessage(message, resourceKey, args) };
+	) => new() { Message = new ValidationMessage(message, code, args) };
 }

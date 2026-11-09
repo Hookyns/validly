@@ -12,8 +12,7 @@ namespace Validly.Validators;
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class EmailAddressAttribute : Attribute
 {
-	private static readonly ValidationMessage ValidationMessage = ValidationMessagesHelper.CreateMessage(
-		nameof(EmailAddressAttribute),
+	private static readonly ValidationMessage ValidationMessage = ValidationMessagesHelper.CreateMessage(ValidationCodes.EmailAddress, LegacyValidationCodes.EmailAddress, null,
 		"Must be a valid email address."
 	);
 

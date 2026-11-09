@@ -42,9 +42,7 @@ public sealed class BetweenAttribute : Attribute
 	}
 
 	private ValidationMessage CreateMessage() =>
-		new(
-			"Must be between {0} and {1}.",
-			ValidationMessagesHelper.GenerateResourceKey(nameof(BetweenAttribute)),
+		ValidationMessagesHelper.CreateMessage(ValidationCodes.Between, LegacyValidationCodes.Between, [ValidationMessagesHelper.Arg("min", _min), ValidationMessagesHelper.Arg("max", _max)], "Must be between {0} and {1}.",
 			_min,
 			_max
 		);

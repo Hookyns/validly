@@ -15,21 +15,19 @@ internal static class Consts
 	public const string JsonPropertyNameAttributeQualifiedName =
 		"System.Text.Json.Serialization.JsonPropertyNameAttribute";
 
-	public const string InternalValidationInvokerGlobalRef = "global::Validly.Validators.IInternalValidationInvoker";
+	public const string InternalValidatableGlobalRef = "global::Validly.IInternalValidatable";
 
 	public const string IValidatableGlobalRef = "global::Validly.IValidatable";
 	public const string ValidationResultGlobalRef = "global::Validly.ValidationResult";
 	public const string ExpandablePropertyValidationResultGlobalRef =
 		"global::Validly.IExpandablePropertyValidationResult";
 	public const string ValidationContextGlobalRef = "global::Validly.ValidationContext";
-	public const string ValidationContextDisposerGlobalRef = "global::Validly.ValidationContextDisposer";
 	public const string ExtendableValidationResultGlobalRef = "global::Validly.ExtendableValidationResult";
 	public const string InternalValidationResultGlobalRef = "global::Validly.IInternalValidationResult";
 	public const string ServiceProviderGlobalRef = $"global::System.{nameof(IServiceProvider)}";
 	public const string ValueTaskGlobalRef = "global::System.Threading.Tasks.ValueTask";
 	public const string CancellationTokenGlobalRef = "global::System.Threading.CancellationToken";
 	public const string ServiceProviderHelperGlobalRef = "global::Validly.ServiceProviderHelper";
-	public const string WeakReferenceGlobalRef = $"global::System.{nameof(WeakReference)}";
 	public const string ValidationMessageGlobalRef = "global::Validly.ValidationMessage";
 
 	public const string ValidatableAttributeUseAutoValidatorsPropertyName = "UseAutoValidators";

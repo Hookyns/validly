@@ -19,10 +19,7 @@ public class CorrectConstsTests
 			Consts.JsonPropertyNameAttributeQualifiedName,
 			typeof(System.Text.Json.Serialization.JsonPropertyNameAttribute).FullName
 		);
-		Assert.Equal(
-			Consts.InternalValidationInvokerGlobalRef,
-			$"global::Validly.Validators.{nameof(IInternalValidationInvoker)}"
-		);
+		Assert.Equal(Consts.InternalValidatableGlobalRef, $"global::Validly.{nameof(IInternalValidatable)}");
 		Assert.Equal(Consts.IValidatableGlobalRef, $"global::Validly.{nameof(IValidatable)}");
 		Assert.Equal(Consts.ValidationResultGlobalRef, $"global::Validly.{nameof(ValidationResult)}");
 		Assert.Equal(
@@ -47,6 +44,5 @@ public class CorrectConstsTests
 		);
 		Assert.Equal(Consts.ValidatableAttributeUseExitEarlyPropertyName, nameof(ValidatableAttribute.UseExitEarly));
 		Assert.Equal(Consts.ValidatableAttributeNoAExitEarlyPropertyName, nameof(ValidatableAttribute.NoExitEarly));
-		Assert.Equal(Consts.ValidationContextDisposerGlobalRef, $"global::Validly.{nameof(ValidationContextDisposer)}");
 	}
 }

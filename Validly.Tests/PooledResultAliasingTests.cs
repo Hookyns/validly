@@ -118,9 +118,6 @@ public class PooledResultAliasingTests
 
 		(await parent.ValidateAsync()).Dispose();
 
-		// The context of the parent validation must not be reused (it is returned to the pool already)
-		Assert.Null(((Validly.Validators.IInternalValidationInvoker)leaf).GetValidationContext());
-
 		using var result = leaf.Validate();
 		Assert.Equal("Value", result.Properties.Single().PropertyPath);
 	}

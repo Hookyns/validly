@@ -5,6 +5,11 @@
 		<LangVersion>12</LangVersion>
 		<IsPackable>false</IsPackable>
 		<Version>2.0.0-beta.1</Version>
+		<!-- Test target frameworks; net11.0 (preview) is added when building with the .NET 11 SDK -->
+		<ValidlyTestTargetFrameworks>net9.0;net10.0</ValidlyTestTargetFrameworks>
+		<ValidlyTestTargetFrameworks Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '11.0'))"
+			>$(ValidlyTestTargetFrameworks);net11.0</ValidlyTestTargetFrameworks
+		>
 		<Authors>Roman Jámbor</Authors>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>

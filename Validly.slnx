@@ -1,0 +1,41 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Benchmarks/">
+    <Project Path="Benchmarks/Benchmarks.Dev/Benchmarks.Dev.csproj" />
+    <Project Path="Benchmarks/Benchmarks/Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/Examples/">
+    <Project Path="Examples/DDDValidations/DDDValidations.csproj" />
+    <Project Path="Examples/Validly.Extensions.AspNetCore.Example/Validly.Extensions.AspNetCore.Example.csproj" />
+  </Folder>
+  <Folder Name="/SourceGenerator/">
+    <Project Path="Validly.SourceGenerator/Validly.SourceGenerator.Roslyn5.0/Validly.SourceGenerator.Roslyn5.0.csproj" />
+  </Folder>
+  <Folder Name="/_Solution Items/">
+    <File Path=".all-contributorsrc" />
+    <File Path=".config/dotnet-tools.json" />
+    <File Path=".csharpierrc" />
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="CONTRIBUTING.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="nuget.config" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="Validly.Extensions.AspNetCore/Validly.Extensions.AspNetCore.csproj" />
+  <Project Path="Validly.SourceGeneration.Tests/Validly.SourceGeneration.Tests.csproj" />
+  <Project Path="Validly.SourceGeneration/Validly.SourceGeneration.csproj" />
+  <Project Path="Validly.SourceGenerator.Tests/Validly.SourceGenerator.Tests.csproj" />
+  <Project Path="Validly.SourceGenerator/Validly.SourceGenerator/Validly.SourceGenerator.csproj" />
+  <Project Path="Validly.Tests.CompileTimeNaming/Validly.Tests.CompileTimeNaming.csproj" />
+  <Project Path="Validly.Tests.DetectedNaming/Validly.Tests.DetectedNaming.csproj" />
+  <Project Path="Validly.Tests.LegacyCodes/Validly.Tests.LegacyCodes.csproj" />
+  <Project Path="Validly.Tests/Validly.Tests.csproj" />
+  <Project Path="Validly/Validly.csproj" />
+</Solution>

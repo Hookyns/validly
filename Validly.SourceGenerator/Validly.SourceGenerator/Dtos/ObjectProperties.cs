@@ -54,6 +54,16 @@ internal record ObjectProperties
 	public required bool IsSealed { get; init; }
 
 	/// <summary>
+	/// [Validatable(Detached = true)]; no Validly interfaces on the object
+	/// </summary>
+	public bool IsDetached { get; init; }
+
+	/// <summary>
+	/// ModuleInitializerAttribute is available; detached objects are registered in the ValidatorRegistry
+	/// </summary>
+	public bool SupportsModuleInitializer { get; init; }
+
+	/// <summary>
 	/// List of properties
 	/// </summary>
 	public required EquatableArray<PropertyProperties> Properties { get; init; }

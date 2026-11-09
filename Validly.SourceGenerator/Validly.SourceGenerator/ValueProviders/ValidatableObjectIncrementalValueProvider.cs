@@ -81,6 +81,9 @@ internal static class ValidatableObjectIncrementalValueProvider
 			Methods = new EquatableArray<MethodProperties>(methods),
 			BaseObject = GetBaseObject(typeSymbol, compilation, cancellationToken),
 			IsSealed = typeSymbol.IsSealed,
+			IsDetached = SymbolMapper.IsDetachedValidatable(typeSymbol),
+			SupportsModuleInitializer =
+				compilation.GetTypeByMetadataName(Consts.ModuleInitializerAttributeQualifiedName) is not null,
 			BeforeValidateMethod = methods.FirstOrDefault(static m => m.MethodName == Consts.BeforeValidateMethodName),
 			AfterValidateMethod = methods.FirstOrDefault(static m => m.MethodName == Consts.AfterValidateMethodName),
 		};

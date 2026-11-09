@@ -34,6 +34,9 @@ internal static class Consts
 	public const string ValidatableAttributeNoAutoValidatorsPropertyName = "NoAutoValidators";
 	public const string ValidatableAttributeUseExitEarlyPropertyName = "UseExitEarly";
 	public const string ValidatableAttributeNoAExitEarlyPropertyName = "NoExitEarly";
+	public const string ValidatableAttributeDetachedPropertyName = "Detached";
+	public const string ModuleInitializerAttributeQualifiedName = "System.Runtime.CompilerServices.ModuleInitializerAttribute";
+	public const string ValidatorRegistryGlobalRef = "global::Validly.ValidatorRegistry";
 
 	public const string CancellationTokenName = $"{nameof(CancellationToken)}";
 

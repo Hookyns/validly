@@ -145,6 +145,9 @@ internal static class SymbolMapper
 			CollectionItemsKind = isReadableInstanceProperty
 				? GetCollectionItemsKind(propertySymbol.Type)
 				: CollectionItemsKind.None,
+			NestedTypeIsDetached =
+				IsDetachedValidatable(propertySymbol.Type)
+				|| (GetCollectionItemType(propertySymbol.Type) is { } itemType && IsDetachedValidatable(itemType)),
 			SkipItemsValidation = attrs.Any(attr =>
 				attr.AttributeClass?.GetQualifiedName() == Consts.SkipItemsValidationAttributeQualifiedName
 			),
@@ -210,6 +213,44 @@ internal static class SymbolMapper
 			"System.Collections.Immutable.ImmutableArray<T>" => CollectionItemsKind.ImmutableArray,
 			_ => CollectionItemsKind.Enumerable,
 		};
+	}
+
+	/// <summary>
+	/// [Validatable(Detached = true)]
+	/// </summary>
+	public static bool IsDetachedValidatable(ITypeSymbol type)
+	{
+		return type is INamedTypeSymbol namedType
+			&& namedType
+				.OriginalDefinition.GetAttributes()
+				.Any(static attr =>
+					attr.AttributeClass?.GetQualifiedName() == Consts.ValidatableAttributeQualifiedName
+					&& attr.NamedArguments.Any(static arg =>
+						arg.Key == Consts.ValidatableAttributeDetachedPropertyName && arg.Value.Value is true
+					)
+				);
+	}
+
+	private static ITypeSymbol? GetCollectionItemType(ITypeSymbol type)
+	{
+		if (type is IArrayTypeSymbol arrayType)
+		{
+			return arrayType.ElementType;
+		}
+
+		if (type is not INamedTypeSymbol namedType || type.SpecialType == SpecialType.System_String)
+		{
+			return null;
+		}
+
+		var enumerableType =
+			namedType.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+				? namedType
+				: namedType.AllInterfaces.FirstOrDefault(static i =>
+					i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+				);
+
+		return enumerableType?.TypeArguments[0];
 	}
 
 	private static bool IsValidatableType(ITypeSymbol type)

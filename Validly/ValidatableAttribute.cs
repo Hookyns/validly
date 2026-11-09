@@ -28,4 +28,12 @@ public sealed class ValidatableAttribute : Attribute
 	/// Disables exit early for the class
 	/// </summary>
 	public bool NoExitEarly { get; set; }
+
+	/// <summary>
+	/// The class does not implement Validly interfaces (<see cref="IValidatable"/>); projects that use the class but
+	/// do not validate it do not have to reference Validly. The Validate/ValidateAsync methods are generated as usual.
+	/// The object is validatable by its runtime type through <see cref="ValidatorRegistry"/> (requires
+	/// ModuleInitializerAttribute, .NET 5+); nested detached objects are validated without polymorphism.
+	/// </summary>
+	public bool Detached { get; set; }
 }

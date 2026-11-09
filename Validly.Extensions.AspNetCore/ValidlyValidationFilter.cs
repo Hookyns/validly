@@ -40,10 +40,9 @@ public sealed class ValidlyValidationFilter : IEndpointFilter
 		{
 			object? argument = invocationContext.Arguments[argumentIndex];
 
-			if (argument is IValidatable validatable)
+			// IValidatable or a registered (detached) validatable object
+			if (argument is not null && ValidatorRegistry.TryValidate(argument, _serviceProvider, ct, out var resultTask))
 			{
-				var resultTask = validatable.ValidateAsync(_serviceProvider, ct);
-
 				ValidationResult validationResult;
 
 				if (resultTask.IsCompletedSuccessfully)

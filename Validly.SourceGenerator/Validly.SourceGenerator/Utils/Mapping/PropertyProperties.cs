@@ -38,6 +38,12 @@ internal record PropertyProperties
 	/// Items of the collection must not be validated ([SkipItemsValidation])
 	/// </summary>
 	public bool SkipItemsValidation { get; init; }
+
+	/// <summary>
+	/// The nested object type (or the collection item type) is a detached validatable object; it is validated
+	/// by a direct call of its core method
+	/// </summary>
+	public bool NestedTypeIsDetached { get; init; }
 }
 
 /// <summary>

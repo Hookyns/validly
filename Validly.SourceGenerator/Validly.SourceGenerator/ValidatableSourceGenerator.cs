@@ -126,11 +126,19 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			.CreateClassOrRecord(properties.Object.ClassOrRecordKeyword, properties.Object.Name + level.TypeParameterList)
 			.SetAccessModifier(properties.Object.Accessibility)
 			// .SetNamespace(properties.Object.Namespace)
-			.Partial()
-			.AddInterfaces(Consts.IValidatableGlobalRef)
-			.AddInterfaces(Consts.InternalValidatableGlobalRef)
-			.AddMember(CreateImplementationOfInternalValidatable())
-			.AddMember(CreateIValidatableValidateMethod(flags))
+			.Partial();
+
+		// Detached objects do not implement Validly interfaces
+		if (!properties.Object.IsDetached)
+		{
+			validatorClassBuilder
+				.AddInterfaces(Consts.IValidatableGlobalRef)
+				.AddInterfaces(Consts.InternalValidatableGlobalRef)
+				.AddMember(CreateImplementationOfInternalValidatable())
+				.AddMember(CreateIValidatableValidateMethod(flags));
+		}
+
+		validatorClassBuilder
 			.AddMember(CreatePublicValidateMethods(properties.Object, flags, baseFlags))
 			.AddMember(CreateCoreValidateMethod(properties, level, flags, baseFlags));
 
@@ -157,6 +165,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			+ rulesClassBuilder.Build().Indent()
 			+ Environment.NewLine
 			+ customValidationsInterfaceBuilder.Build().Indent()
+			+ Environment.NewLine
+			+ CreateDetachedRegistration(properties.Object, flags).Indent()
 			+ Environment.NewLine
 			+ (properties.Object.Namespace is null ? string.Empty : "}");
 
@@ -414,7 +424,11 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		var asyncKeyword = isAsync ? "async " : string.Empty;
 
 		// Sealed objects cannot be inherited; protected member in a sealed type is a warning
-		var accessModifier = properties.Object.IsSealed ? "private" : "protected";
+		// Detached objects have no interface, nested detached objects are validated by a direct call of the core method
+		var accessModifier =
+			properties.Object.IsDetached ? "public"
+			: properties.Object.IsSealed ? "private"
+			: "protected";
 
 		// Core method of the base is hidden by the core method of this level
 		var newModifier = baseObject?.HasCoreMethod == true ? "new " : string.Empty;
@@ -456,7 +470,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				if (this.{{property.PropertyName}} is {} nestedObject{{nestedIndex}})
 				{
 					context.SetObject(nestedObject{{nestedIndex}});
-					nestedValidationResult{{nestedIndex}} = await (({{Consts.InternalValidatableGlobalRef}})nestedObject{{nestedIndex}}).{{Consts.ValidateCoreMethodName}}(context, serviceProvider, ct);
+					nestedValidationResult{{nestedIndex}} = await {{CoreCallTarget(property, $"nestedObject{nestedIndex}")}}.{{Consts.ValidateCoreMethodName}}(context, serviceProvider, ct);
 					nestedPropertiesCount += (({{Consts.InternalValidationResultGlobalRef}})nestedValidationResult{{nestedIndex}}).GetPropertiesCount();
 				}
 				"""
@@ -496,7 +510,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				}
 
 				context.SetObject(collectionItem{{n}});
-				var collectionItemResult{{n}} = await (({{Consts.InternalValidatableGlobalRef}})collectionItem{{n}}).{{Consts.ValidateCoreMethodName}}(context, serviceProvider, ct);
+				var collectionItemResult{{n}} = await {{CoreCallTarget(property, $"collectionItem{n}")}}.{{Consts.ValidateCoreMethodName}}(context, serviceProvider, ct);
 
 				// Only invalid items are reported
 				if (collectionItemResult{{n}}.IsSuccess)
@@ -674,6 +688,44 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		validateMethodFilePart.AppendLine("}");
 
 		return validateMethodFilePart;
+	}
+
+	/// <summary>
+	/// Target of the core method call of a nested object / collection item; through the interface (polymorphic),
+	/// or directly for detached objects (they have no interface)
+	/// </summary>
+	private static string CoreCallTarget(PropertyProperties property, string variable)
+	{
+		return property.NestedTypeIsDetached ? variable : $"(({Consts.InternalValidatableGlobalRef}){variable})";
+	}
+
+	/// <summary>
+	/// Detached objects do not implement IValidatable; they are registered in the ValidatorRegistry when the module
+	/// is loaded, so they can be validated by their runtime type (e.g. by the ASP.NET Core filter)
+	/// </summary>
+	private static string CreateDetachedRegistration(ObjectProperties obj, HierarchyFlags flags)
+	{
+		if (!obj.IsDetached || !obj.SupportsModuleInitializer || obj.TypeParameters.GetArray()?.Length > 0)
+		{
+			return string.Empty;
+		}
+
+		string typeName = obj.Namespace is null ? $"global::{obj.Name}" : $"global::{obj.Namespace}.{obj.Name}";
+		string serviceProviderArgument = flags.RequiresServiceProvider ? "serviceProvider!, " : string.Empty;
+
+		return $$"""
+			[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+			internal static class {{obj.Name}}ValidlyRegistration
+			{
+			#pragma warning disable CA2255 // Module initializer in a library; registers the generated validation
+				[global::System.Runtime.CompilerServices.ModuleInitializer]
+				internal static void Register()
+				{
+					{{Consts.ValidatorRegistryGlobalRef}}.Register<{{typeName}}>(static (obj, serviceProvider, ct) => obj.ValidateAsync({{serviceProviderArgument}}ct));
+				}
+			#pragma warning restore CA2255
+			}
+			""";
 	}
 
 	private static MethodProperties? GetCalledHook(MethodProperties? hook)

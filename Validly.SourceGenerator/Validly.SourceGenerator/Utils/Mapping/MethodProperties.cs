@@ -26,4 +26,10 @@ internal record MethodProperties
 	/// Dependencies of the method
 	/// </summary>
 	public required EquatableArray<DependencyInjectionInfo> Dependencies { get; init; }
+
+	/// <summary>
+	/// The method overrides a method declared by a validatable ancestor; such a hook is called (virtually)
+	/// by the validation of the ancestor, so it must not be called again
+	/// </summary>
+	public bool IsCalledByBase { get; init; }
 }

@@ -17,10 +17,12 @@ internal static class SymbolMapper
 			skipFirstParameter ? Math.Max(methodSymbol.Parameters.Length - 1, 0) : methodSymbol.Parameters.Length
 		];
 
-		for (int i = skipFirstParameter ? 1 : 0; i < methodSymbol.Parameters.Length; i++)
+		int offset = skipFirstParameter ? 1 : 0;
+
+		for (int i = offset; i < methodSymbol.Parameters.Length; i++)
 		{
 			var parameter = methodSymbol.Parameters[i];
-			dependencies[i] = ExtractDependencyInjectionInfo(parameter);
+			dependencies[i - offset] = ExtractDependencyInjectionInfo(parameter);
 		}
 
 		var namedReturnType = methodSymbol.ReturnType as INamedTypeSymbol;

@@ -11,6 +11,8 @@ internal static class Consts
 	public const string ValidationContextQualifiedName = "Validly.ValidationContext";
 	public const string ValidationResultQualifiedName = "Validly.ValidationResult";
 	public const string ExtendableValidationResultQualifiedName = "Validly.ExtendableValidationResult";
+	public const string JsonPropertyNameAttributeQualifiedName =
+		"System.Text.Json.Serialization.JsonPropertyNameAttribute";
 
 	public const string InternalValidationInvokerGlobalRef = "global::Validly.Validators.IInternalValidationInvoker";
 

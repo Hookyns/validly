@@ -20,6 +20,15 @@ public interface IInternalValidationResult
 	IExpandablePropertyValidationResult InitProperty(string name, string? displayName = null);
 
 	/// <summary>
+	/// Take property from the pool and initialize it
+	/// </summary>
+	/// <param name="name"></param>
+	/// <param name="displayName"></param>
+	/// <param name="jsonName">Explicit JSON name of the property (from [JsonPropertyName])</param>
+	/// <returns></returns>
+	IExpandablePropertyValidationResult InitProperty(string name, string? displayName, string? jsonName);
+
+	/// <summary>
 	/// Add a global message to the validation result
 	/// </summary>
 	/// <param name="message"></param>
@@ -59,4 +68,12 @@ public interface IInternalValidationResult
 	/// <param name="result"></param>
 	/// <param name="propertyName">Name of the property from which the result comes from.</param>
 	void CombineNested(ValidationResult result, string propertyName);
+
+	/// <summary>
+	/// Combine results. Global messages and property results are added to the current result.
+	/// </summary>
+	/// <param name="result"></param>
+	/// <param name="propertyName">Name of the property from which the result comes from.</param>
+	/// <param name="propertyJsonName">Explicit JSON name of the property (from [JsonPropertyName]).</param>
+	void CombineNested(ValidationResult result, string propertyName, string? propertyJsonName);
 }

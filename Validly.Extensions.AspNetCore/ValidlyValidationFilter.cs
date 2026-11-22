@@ -1,4 +1,8 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Validly.Naming;
 
 namespace Validly.Extensions.AspNetCore;
 
@@ -29,8 +33,6 @@ public sealed class ValidlyValidationFilter : IEndpointFilter
 
 			if (argument is IValidatable validatable)
 			{
-				// Do not use "using"; we don't want to dispose it here.
-				// The ValidationHttpResult will dispose in case there are errors.
 				var resultTask = validatable.ValidateAsync(_serviceProvider, ct);
 
 				ValidationResult validationResult;
@@ -48,21 +50,33 @@ public sealed class ValidlyValidationFilter : IEndpointFilter
 				{
 					if (!validationResult.IsSuccess)
 					{
-						// TODO: This allocates memory. Optimize! For disposing and returning back to the pool we can use invocationContext.HttpContext.Response.RegisterForDispose(disposable)
-						return new ValidationHttpResult(validationResult);
+						return TypedResults.Content(
+							validationResult.GetProblemDetailsJson(GetNamingPolicy()),
+							"application/problem+json",
+							statusCode: StatusCodes.Status400BadRequest
+						);
 					}
-
-					// Dispose if not used for ValidationHttpResult
-					validationResult.Dispose();
 				}
-				catch (Exception)
+				finally
 				{
-					// Try to Dispose
+					// The problem details JSON is already materialized at this point,
+					// so it's safe to return the result back to the pool here.
 					validationResult.Dispose();
 				}
 			}
 		}
 
 		return await next(invocationContext);
+	}
+
+	/// <summary>
+	/// Naming policy configured for the HTTP JSON serialization; used for the error pointers
+	/// </summary>
+	/// <remarks>Resolved only when the validation fails, so the valid requests don't pay for it.</remarks>
+	private PropertyNamingPolicy? GetNamingPolicy()
+	{
+		return JsonNamingPolicyMapper.Map(
+			_serviceProvider.GetService<IOptions<JsonOptions>>()?.Value.SerializerOptions.PropertyNamingPolicy
+		);
 	}
 }

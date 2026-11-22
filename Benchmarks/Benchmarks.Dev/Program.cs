@@ -40,6 +40,13 @@ using Benchmarks.Dev;
 DevValidlyBenchmark.EnableOneTest = false;
 
 // RUN
+if (args.Length != 0)
+{
+	// Pick the benchmarks from the command line, e.g. --filter *ProblemDetailsBenchmark*
+	BenchmarkSwitcher.FromAssembly(typeof(DevValidlyBenchmark).Assembly).Run(args);
+	return;
+}
+
 BenchmarkRunner.Run<DevValidlyBenchmark>();
 // BenchmarkRunner.Run<DevValidlyExitEarlyBenchmark>();
 // BenchmarkRunner.Run<DevValidlyBenchmark>(config);

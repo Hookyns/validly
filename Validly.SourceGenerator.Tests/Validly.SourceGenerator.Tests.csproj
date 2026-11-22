@@ -13,6 +13,10 @@
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
 	</ItemGroup>
 	<ItemGroup>
+		<!-- The generator detects the naming policy of the ASP.NET Core JSON options; tests compile such sources -->
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+	<ItemGroup>
 		<Using Include="Xunit" />
 	</ItemGroup>
 	<ItemGroup>

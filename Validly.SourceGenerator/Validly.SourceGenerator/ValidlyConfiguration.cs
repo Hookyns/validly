@@ -24,10 +24,10 @@ public record ValidlyConfiguration
 	/// Naming policy used for the JSON names of the properties.
 	/// Null means it is not configured; the generator then tries to detect it in the compilation.
 	/// </summary>
-	public ValidlyNamingPolicy? JsonNamingPolicy { get; init; }
+	internal ValidlyNamingPolicy? JsonNamingPolicy { get; init; }
 
 	/// <summary>
 	/// Raw value of the JsonNamingPolicy option when it was set but not recognized; reported as a diagnostic
 	/// </summary>
-	public string? UnknownJsonNamingPolicy { get; init; }
+	internal string? UnknownJsonNamingPolicy { get; init; }
 }

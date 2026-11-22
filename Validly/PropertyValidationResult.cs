@@ -148,24 +148,47 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 	public string GetJsonPointerPath(PropertyNamingPolicy? namingPolicy = null)
 	{
 		string leaf = EscapeJsonPointerSegment(ResolveJsonName(_propertyName, _propertyJsonName, namingPolicy));
-		PropertyPathSegment? parentSegments = GetParentSegments();
 
-		if (parentSegments is null)
+		// Read-only on purpose; the pending parent (the root of the path) is not materialized here,
+		// so the result can be read concurrently and one level of nesting does not allocate a segment.
+		string? pendingParentName = _pendingParentName;
+		PropertyPathSegment? parentSegments = _parentSegments;
+
+		if (pendingParentName is null)
 		{
-			return leaf;
+			if (parentSegments is null)
+			{
+				return leaf;
+			}
+
+			if (parentSegments.Next is null)
+			{
+				return string.Concat(
+					EscapeJsonPointerSegment(
+						ResolveJsonName(parentSegments.Name, parentSegments.JsonName, namingPolicy)
+					),
+					"/",
+					leaf
+				);
+			}
 		}
 
+		string? root = pendingParentName is null
+			? null
+			: EscapeJsonPointerSegment(ResolveJsonName(pendingParentName, _pendingParentJsonName, namingPolicy));
+
 		// One level of nesting is the common case; concat it directly instead of using a StringBuilder
-		if (parentSegments.Next is null)
+		if (parentSegments is null)
 		{
-			return string.Concat(
-				EscapeJsonPointerSegment(ResolveJsonName(parentSegments.Name, parentSegments.JsonName, namingPolicy)),
-				"/",
-				leaf
-			);
+			return string.Concat(root, "/", leaf);
 		}
 
 		var sb = new StringBuilder();
+
+		if (root is not null)
+		{
+			sb.Append(root).Append('/');
+		}
 
 		for (PropertyPathSegment? segment = parentSegments; segment is not null; segment = segment.Next)
 		{

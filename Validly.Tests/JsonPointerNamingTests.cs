@@ -172,6 +172,58 @@ public class JsonPointerNamingTests
 	}
 
 	[Fact]
+	public async Task ReadingThePointer_DoesNotChangeTheResult()
+	{
+		var deepRoot = new JsonNamedDeepRootObject
+		{
+			Root = new()
+			{
+				Parent = new() { ChildProp = "abc", ExplicitChild = "abc" },
+				OtherParent = new() { ChildProp = "abc", ExplicitChild = "abc" },
+			},
+		};
+
+		using var result = await deepRoot.ValidateAsync();
+
+		string[] expected = result.Properties.Select(x => x.GetJsonPointerPath(PropertyNamingPolicy.CamelCase)).ToArray();
+
+		// The same result is read from multiple threads; the paths have to stay the same
+		Parallel.For(
+			0,
+			1000,
+			_ =>
+			{
+				foreach ((PropertyValidationResult property, string path) in result.Properties.Zip(expected, (a, b) => (a, b)))
+				{
+					Assert.Equal(path, property.GetJsonPointerPath(PropertyNamingPolicy.CamelCase));
+				}
+			}
+		);
+
+		Assert.Contains("deep_root/parent_json/childProp", expected);
+	}
+
+	[Fact]
+	public void PointerIsCorrect_WhenReadBetweenNestingLevels()
+	{
+		var property = new PropertyValidationResult("Leaf", "Leaf", [new ValidationMessage("message", "key")]);
+		var nestable = (IInternalPropertyValidationResult)property;
+
+		Assert.Equal("leaf", property.GetJsonPointerPath(PropertyNamingPolicy.CamelCase));
+
+		nestable.AsNestedPropertyValidationResult("Parent", "parent_json");
+		Assert.Equal("parent_json/leaf", property.GetJsonPointerPath(PropertyNamingPolicy.CamelCase));
+		Assert.Equal("parent_json/leaf", property.GetJsonPointerPath(PropertyNamingPolicy.CamelCase));
+
+		nestable.AsNestedPropertyValidationResult("GrandParent", null);
+		Assert.Equal("grandParent/parent_json/leaf", property.GetJsonPointerPath(PropertyNamingPolicy.CamelCase));
+
+		nestable.AsNestedPropertyValidationResult("Root", "root_json");
+		Assert.Equal("root_json/grandParent/parent_json/leaf", property.GetJsonPointerPath(PropertyNamingPolicy.CamelCase));
+		Assert.Equal("Root/GrandParent/Parent/Leaf", property.PropertyPath);
+	}
+
+	[Fact]
 	public async Task ProblemDetailsJson_IsValidJsonWithJsonPointers()
 	{
 		using var result = await InvalidObject.ValidateAsync();

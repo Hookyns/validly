@@ -7,6 +7,8 @@
 		<LangVersion>12</LangVersion>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		<IsRoslynComponent>true</IsRoslynComponent>
+		<!-- Types shared (linked) with the runtime are compiled as internal here -->
+		<DefineConstants>$(DefineConstants);VALIDLY_SOURCE_GENERATOR</DefineConstants>
 		<!-- The generator is shipped only as an analyzer; it must not become a compile reference of the consumers -->
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>

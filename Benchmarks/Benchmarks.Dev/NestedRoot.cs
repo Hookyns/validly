@@ -10,7 +10,6 @@ public sealed partial class NestedRoot
 	[MinLength(5)]
 	public required string RootProp { get; set; }
 
-	// NOTE: only one validatable child; two of them hit an existing pooling bug ("Collection is full")
 	[JsonPropertyName("named_child")]
 	public required NestedChild Named { get; set; }
 }

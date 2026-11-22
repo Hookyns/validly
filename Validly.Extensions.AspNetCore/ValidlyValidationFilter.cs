@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,18 +13,10 @@ public sealed class ValidlyValidationFilter : IEndpointFilter
 {
 	private readonly IServiceProvider _serviceProvider;
 
-	/// <summary>
-	/// Naming policy configured for the HTTP JSON serialization; used for the error pointers
-	/// </summary>
-	private readonly PropertyNamingPolicy? _namingPolicy;
-
 	/// <param name="serviceProvider"></param>
 	public ValidlyValidationFilter(IServiceProvider serviceProvider)
 	{
 		_serviceProvider = serviceProvider;
-		_namingPolicy = JsonNamingPolicyMapper.Map(
-			serviceProvider.GetService<IOptions<JsonOptions>>()?.Value.SerializerOptions.PropertyNamingPolicy
-		);
 	}
 
 	/// <inheritdoc />
@@ -60,10 +51,9 @@ public sealed class ValidlyValidationFilter : IEndpointFilter
 					if (!validationResult.IsSuccess)
 					{
 						return TypedResults.Content(
-							validationResult.GetProblemDetailsJson(_namingPolicy),
+							validationResult.GetProblemDetailsJson(GetNamingPolicy()),
 							"application/problem+json",
-							Encoding.UTF8,
-							StatusCodes.Status400BadRequest
+							statusCode: StatusCodes.Status400BadRequest
 						);
 					}
 				}
@@ -77,5 +67,16 @@ public sealed class ValidlyValidationFilter : IEndpointFilter
 		}
 
 		return await next(invocationContext);
+	}
+
+	/// <summary>
+	/// Naming policy configured for the HTTP JSON serialization; used for the error pointers
+	/// </summary>
+	/// <remarks>Resolved only when the validation fails, so the valid requests don't pay for it.</remarks>
+	private PropertyNamingPolicy? GetNamingPolicy()
+	{
+		return JsonNamingPolicyMapper.Map(
+			_serviceProvider.GetService<IOptions<JsonOptions>>()?.Value.SerializerOptions.PropertyNamingPolicy
+		);
 	}
 }

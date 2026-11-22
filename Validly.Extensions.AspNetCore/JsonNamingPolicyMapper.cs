@@ -9,6 +9,11 @@ namespace Validly.Extensions.AspNetCore;
 internal static class JsonNamingPolicyMapper
 {
 	/// <summary>
+	/// The last mapped custom policy; an application uses one policy, so it is wrapped just once
+	/// </summary>
+	private static CustomPolicy? _customPolicy;
+
+	/// <summary>
 	/// Returns the matching Validly policy; a custom policy is wrapped, so it is invoked through its ConvertName
 	/// </summary>
 	/// <param name="namingPolicy"></param>
@@ -46,6 +51,18 @@ internal static class JsonNamingPolicyMapper
 			return PropertyNamingPolicy.KebabCaseUpper;
 		}
 
-		return PropertyNamingPolicy.Create(namingPolicy.ConvertName);
+		CustomPolicy? customPolicy = _customPolicy;
+
+		if (customPolicy is null || !ReferenceEquals(customPolicy.Source, namingPolicy))
+		{
+			_customPolicy = customPolicy = new CustomPolicy(
+				namingPolicy,
+				PropertyNamingPolicy.Create(namingPolicy.ConvertName)
+			);
+		}
+
+		return customPolicy.Mapped;
 	}
+
+	private sealed record CustomPolicy(JsonNamingPolicy Source, PropertyNamingPolicy Mapped);
 }

@@ -45,7 +45,7 @@ public sealed class PropertyValidationResult : IInternalPropertyValidationResult
 		PropertyPath = propertyPath;
 		PropertyDisplayName = propertyDisplayName;
 
-		_messages = new SpanCollection<ValidationMessage>(messages.ToArray(), 0, messages.Count - 1, messages.Count);
+		_messages = new SpanCollection<ValidationMessage>(messages.ToArray(), 0, messages.Count, messages.Count);
 	}
 
 	/// <summary>

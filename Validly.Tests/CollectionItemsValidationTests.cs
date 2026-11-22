@@ -48,13 +48,6 @@ public partial class CollectionKinds
 }
 
 [Validatable]
-public partial class CollectionWithSkippedItems
-{
-	[SkipItemsValidation]
-	public List<CollectionOrderLine>? Lines { get; set; }
-}
-
-[Validatable]
 public partial class CollectionJsonNamed
 {
 	[JsonPropertyName("order_lines")]
@@ -173,17 +166,6 @@ public class CollectionItemsValidationTests
 				yield return line;
 			}
 		}
-	}
-
-	[Fact]
-	public async Task SkipItemsValidation_ItemsAreNotValidated()
-	{
-		using var result = await new CollectionWithSkippedItems
-		{
-			Lines = [new CollectionOrderLine { ProductCode = null, Quantity = 0 }],
-		}.ValidateAsync();
-
-		Assert.True(result.IsSuccess);
 	}
 
 	[Fact]

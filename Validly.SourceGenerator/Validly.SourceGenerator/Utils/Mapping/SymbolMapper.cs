@@ -147,9 +147,6 @@ internal static class SymbolMapper
 			CollectionItemsKind = isReadableInstanceProperty
 				? GetCollectionItemsKind(propertySymbol.Type)
 				: CollectionItemsKind.None,
-			SkipItemsValidation = attrs.Any(attr =>
-				attr.AttributeClass?.GetQualifiedName() == Consts.SkipItemsValidationAttributeQualifiedName
-			),
 		};
 	}
 

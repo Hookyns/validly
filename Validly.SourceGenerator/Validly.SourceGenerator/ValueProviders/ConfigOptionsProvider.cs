@@ -42,7 +42,6 @@ internal static class ConfigOptionsProvider
 			AutoRequired = ToBool(raw.AutoRequired ?? "enabled"),
 			AutoInEnum = ToBool(raw.AutoInEnum ?? "enabled"),
 			ExitEarly = ToBool(raw.ExitEarly),
-			ValidateCollectionItems = ToBool(raw.ValidateCollectionItems ?? "enabled"),
 			JsonNamingPolicy = namingPolicy,
 			UnknownJsonNamingPolicy =
 				namingPolicy is null && !string.IsNullOrWhiteSpace(raw.JsonNamingPolicy) ? raw.JsonNamingPolicy : null,
@@ -129,6 +128,5 @@ public class RawValidlyConfiguration
 	public string? AutoRequired { get; set; }
 	public string? AutoInEnum { get; set; }
 	public string? ExitEarly { get; set; }
-	public string? ValidateCollectionItems { get; set; }
 	public string? JsonNamingPolicy { get; set; }
 }

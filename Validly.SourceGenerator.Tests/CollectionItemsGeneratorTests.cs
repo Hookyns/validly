@@ -51,17 +51,6 @@ public class CollectionItemsGeneratorTests
 		Assert.DoesNotContain("\"Strings\"", generated);
 	}
 
-	[Fact]
-	public void DisabledByConfiguration_ItemsAreNotValidated()
-	{
-		var result = GeneratorAssert.CompilesWithoutErrors(
-			Source,
-			"<ValidateCollectionItems>disable</ValidateCollectionItems>"
-		);
-
-		Assert.DoesNotContain("CombineCollectionItem", GetOrderSource(result));
-	}
-
 	private static string GetOrderSource(Microsoft.CodeAnalysis.GeneratorRunResult result) =>
 		result.GeneratedSources.Single(s => s.HintName.Contains("Order")).SourceText.ToString();
 }

@@ -33,11 +33,6 @@ internal record PropertyProperties
 	/// Kind of the collection when the property is a collection of validatable objects; None otherwise
 	/// </summary>
 	public CollectionItemsKind CollectionItemsKind { get; init; }
-
-	/// <summary>
-	/// Items of the collection must not be validated ([SkipItemsValidation])
-	/// </summary>
-	public bool SkipItemsValidation { get; init; }
 }
 
 /// <summary>

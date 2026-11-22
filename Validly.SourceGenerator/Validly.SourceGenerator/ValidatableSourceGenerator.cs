@@ -297,7 +297,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		bool isAsync =
 			isInherentlyAsync
 			// TODO: Can we handle this differently? How should we check if that type is async validator? For now, we force async behavior if there is any property of Validatable type
-			|| obj.Properties.Any(prop => prop.PropertyIsOfValidatableType || ValidatesCollectionItems(prop, config));
+			|| obj.Properties.Any(prop => prop.PropertyIsOfValidatableType || ValidatesCollectionItems(prop));
 
 		return new LevelAnalysis
 		{
@@ -316,11 +316,9 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	/// <summary>
 	/// Items of the collection property are validated
 	/// </summary>
-	private static bool ValidatesCollectionItems(PropertyProperties property, ValidlyConfiguration config)
+	private static bool ValidatesCollectionItems(PropertyProperties property)
 	{
-		return config.ValidateCollectionItems
-			&& !property.SkipItemsValidation
-			&& property.CollectionItemsKind != CollectionItemsKind.None;
+		return property.CollectionItemsKind != CollectionItemsKind.None;
 	}
 
 	private static bool IsCalledAwaitableHook(MethodProperties? hook)
@@ -447,7 +445,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 
 		foreach (var property in properties.Object.Properties)
 		{
-			if (!ValidatesCollectionItems(property, properties.Config))
+			if (!ValidatesCollectionItems(property))
 			{
 				continue;
 			}

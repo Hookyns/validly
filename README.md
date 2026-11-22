@@ -99,8 +99,7 @@ validated too. Errors carry the index of the item, so the exact value can be poi
 | `Lines/2`             | `#/lines/2`               | Message from the item's `AfterValidate` hook |
 
 Only invalid items are reported; null items are skipped (use `[Required]` / collection validators on the collection
-itself). Opt out per property with `[SkipItemsValidation]`, or for the whole project with
-`<ValidateCollectionItems>disable</ValidateCollectionItems>` in `ValidlyConfiguration`.
+itself).
 
 A `[Validatable]` class can inherit from another `[Validatable]` class (also through non-validatable classes in
 between). The result of the derived class contains the results of the base class first, followed by its own; the

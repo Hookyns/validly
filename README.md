@@ -56,6 +56,57 @@ app.MapPost("/users", async (CreateUserRequest request) =>
 });
 ```
 
+## JSON names in validation errors
+The `pointer` of each validation error follows the JSON contract, not the C# property name, so clients get the names they
+actually sent:
+
+- `[JsonPropertyName("...")]` always wins.
+- Otherwise the configured JSON naming policy is applied, e.g. `UserName` becomes `#/userName` with camelCase.
+
+The names are resolved at compile time whenever the generator knows the policy, so nothing is converted per request.
+Configure it explicitly in your project file:
+
+```xml
+<PropertyGroup>
+    <ValidlyConfiguration>
+        <JsonNamingPolicy>camelCase</JsonNamingPolicy>
+    </ValidlyConfiguration>
+</PropertyGroup>
+<ItemGroup>
+    <CompilerVisibleProperty Include="ValidlyConfiguration" />
+</ItemGroup>
+```
+
+Accepted values are `none`, `camelCase`, `snake_case_lower`, `snake_case_upper`, `kebab_case_lower` and
+`kebab_case_upper`, matching the `System.Text.Json` policies.
+
+When it is not configured, the generator looks for a policy assigned in the same project, for example
+`o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase`. If it cannot tell (the serializer is set up in
+another project, the project relies on the ASP.NET defaults, or a custom policy is used), the policy is applied at
+runtime instead: `Validly.Extensions.AspNetCore` reads it from the configured `JsonOptions`, and `GetProblemDetails` /
+`GetProblemDetailsJson` take an optional `PropertyNamingPolicy`. Note that ASP.NET Minimal APIs serialize with
+camelCase by default.
+
+## Nested objects, collections and inheritance
+Properties of a `[Validatable]` type are validated as nested objects (`Address/Street`).
+
+Items of collections of `[Validatable]` objects (arrays, `List<T>`, `IReadOnlyList<T>`, any `IEnumerable<T>`) are
+validated too. Errors carry the index of the item, so the exact value can be pointed at:
+
+| Property path         | JSON pointer              | Error                                       |
+|-----------------------|---------------------------|---------------------------------------------|
+| `Lines/1/ProductCode` | `#/lines/1/productCode`   | Rule of the item's property                 |
+| `Lines/2`             | `#/lines/2`               | Message from the item's `AfterValidate` hook |
+
+Only invalid items are reported; null items are skipped (use `[Required]` / collection validators on the collection
+itself). Opt out per property with `[SkipItemsValidation]`, or for the whole project with
+`<ValidateCollectionItems>disable</ValidateCollectionItems>` in `ValidlyConfiguration`.
+
+A `[Validatable]` class can inherit from another `[Validatable]` class (also through non-validatable classes in
+between). The result of the derived class contains the results of the base class first, followed by its own; the
+`BeforeValidate`/`AfterValidate` hooks of each class are called. When only the derived class requires services
+(`IServiceProvider`), the inherited methods without `IServiceProvider` throw; use the overloads with it.
+
 ## Installation
 Install the package via NuGet:
 ```bash

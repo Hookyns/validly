@@ -2,6 +2,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Validly.Naming;
 
 namespace Validly.SourceGenerator.ValueProviders;
 
@@ -34,12 +35,17 @@ internal static class ConfigOptionsProvider
 	)
 	{
 		RawValidlyConfiguration raw = Read(configurationXml);
+		ValidlyNamingPolicy? namingPolicy = ToNamingPolicy(raw.JsonNamingPolicy);
 
 		return new ValidlyConfiguration
 		{
 			AutoRequired = ToBool(raw.AutoRequired ?? "enabled"),
 			AutoInEnum = ToBool(raw.AutoInEnum ?? "enabled"),
 			ExitEarly = ToBool(raw.ExitEarly),
+			ValidateCollectionItems = ToBool(raw.ValidateCollectionItems ?? "enabled"),
+			JsonNamingPolicy = namingPolicy,
+			UnknownJsonNamingPolicy =
+				namingPolicy is null && !string.IsNullOrWhiteSpace(raw.JsonNamingPolicy) ? raw.JsonNamingPolicy : null,
 		};
 	}
 
@@ -69,6 +75,44 @@ internal static class ConfigOptionsProvider
 		return (RawValidlyConfiguration)Serializer.Deserialize(reader);
 	}
 
+	/// <summary>
+	/// Parses the configured naming policy; null when it is not configured or not recognized
+	/// </summary>
+	private static ValidlyNamingPolicy? ToNamingPolicy(string? value)
+	{
+		if (value is null)
+		{
+			return null;
+		}
+
+		switch (value.Trim().Replace("_", string.Empty).Replace("-", string.Empty).ToLowerInvariant())
+		{
+			case "none":
+			case "asdeclared":
+				return ValidlyNamingPolicy.None;
+
+			case "camelcase":
+				return ValidlyNamingPolicy.CamelCase;
+
+			case "snakecase":
+			case "snakecaselower":
+				return ValidlyNamingPolicy.SnakeCaseLower;
+
+			case "snakecaseupper":
+				return ValidlyNamingPolicy.SnakeCaseUpper;
+
+			case "kebabcase":
+			case "kebabcaselower":
+				return ValidlyNamingPolicy.KebabCaseLower;
+
+			case "kebabcaseupper":
+				return ValidlyNamingPolicy.KebabCaseUpper;
+
+			default:
+				return null;
+		}
+	}
+
 	private static bool ToBool(string? value)
 	{
 		return value is not null
@@ -85,4 +129,6 @@ public class RawValidlyConfiguration
 	public string? AutoRequired { get; set; }
 	public string? AutoInEnum { get; set; }
 	public string? ExitEarly { get; set; }
+	public string? ValidateCollectionItems { get; set; }
+	public string? JsonNamingPolicy { get; set; }
 }

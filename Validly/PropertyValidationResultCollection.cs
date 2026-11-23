@@ -112,7 +112,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 		_count = 0;
 	}
 
-	internal PropertyValidationResult InitProperty(string name, string displayName)
+	internal PropertyValidationResult InitProperty(string name, string displayName, string? jsonName)
 	{
 		if (_count >= _propertiesResult.Length)
 		{
@@ -128,7 +128,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 			new PropertyValidationResult();
 
 		int start = (_count - 1) * _messagesPerProperty;
-		propertyResult.ResetProperty(name, displayName, _messages, start, start + _messagesPerProperty, 0);
+		propertyResult.ResetProperty(name, displayName, jsonName, _messages, start, start + _messagesPerProperty, 0);
 
 		return propertyResult;
 	}
@@ -148,7 +148,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 		for (int index = 0; index < collection._count; index++)
 		{
 			PropertyValidationResult source = collection._propertiesResult[index];
-			AddCopy(source, source.PropertyPath, findExisting: false);
+			AddCopy(source, null, null, findExisting: false);
 		}
 
 		return this;
@@ -167,7 +167,7 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	{
 		if (_pooled)
 		{
-			AddCopy(propertyValidationResult, propertyValidationResult.PropertyPath, findExisting: true);
+			AddCopy(propertyValidationResult, null, null, findExisting: true);
 			return;
 		}
 
@@ -198,12 +198,30 @@ public sealed class PropertyValidationResultCollection : IReadOnlyList<PropertyV
 	/// Copy the property result (its messages) into a property result owned by this collection
 	/// </summary>
 	/// <param name="source">Property result to copy; it is not referenced by this collection afterward</param>
-	/// <param name="propertyPath">Path of the property in this collection</param>
+	/// <param name="parentPropertyName">Parent property the source is nested under; null to keep the path</param>
+	/// <param name="parentPropertyJsonName">Explicit JSON name of the parent property</param>
 	/// <param name="findExisting">Merge messages into an existing property result with the same path</param>
-	internal void AddCopy(PropertyValidationResult source, string propertyPath, bool findExisting)
+	/// <param name="indexName">Index of the collection item, nested under the parent property</param>
+	internal void AddCopy(
+		PropertyValidationResult source,
+		string? parentPropertyName,
+		string? parentPropertyJsonName,
+		bool findExisting,
+		string? indexName = null
+	)
 	{
-		PropertyValidationResult? target = findExisting ? FindProperty(propertyPath) : null;
-		target ??= InitProperty(propertyPath, source.PropertyDisplayName);
+		PropertyValidationResult? target = null;
+
+		if (findExisting)
+		{
+			target = FindProperty(PropertyValidationResult.CreateNestedPath(source, parentPropertyName, indexName));
+		}
+
+		if (target is null)
+		{
+			target = InitProperty(source.PropertyPath, source.PropertyDisplayName, null);
+			target.CopyPathFrom(source, parentPropertyName, parentPropertyJsonName, indexName);
+		}
 
 		IReadOnlyList<ValidationMessage> messages = source.Messages;
 		var expandable = (IExpandablePropertyValidationResult)target;

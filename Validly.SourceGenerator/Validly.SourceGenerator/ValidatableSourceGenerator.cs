@@ -1,7 +1,10 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Validly.Naming;
 using Validly.SourceGenerator.Builders;
+using Validly.SourceGenerator.Diagnostics;
 using Validly.SourceGenerator.Dtos;
 using Validly.SourceGenerator.Utils;
 using Validly.SourceGenerator.Utils.Mapping;
@@ -18,7 +21,32 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	{
 		var allValidators = ValidatorsIncrementalValueProvider.Get(initContext);
 		var validatableObjects = ValidatableObjectIncrementalValueProvider.Get(initContext);
-		var config = ConfigOptionsProvider.Get(initContext);
+		var config = ConfigOptionsProvider
+			.Get(initContext)
+			.Combine(JsonNamingPolicyDetectionProvider.Get(initContext))
+			// Explicit configuration wins over the detected policy
+			.Select(
+				(tuple, _) =>
+					tuple.Left.JsonNamingPolicy is not null
+						? tuple.Left
+						: tuple.Left with
+						{
+							JsonNamingPolicy = tuple.Right,
+						}
+			);
+
+		initContext.RegisterSourceOutput(
+			config.Select((configuration, _) => configuration.UnknownJsonNamingPolicy),
+			static (context, unknownPolicy) =>
+			{
+				if (unknownPolicy is not null)
+				{
+					context.ReportDiagnostic(
+						Diagnostic.Create(DiagnosticDescriptors.UnknownJsonNamingPolicy, Location.None, unknownPolicy)
+					);
+				}
+			}
+		);
 
 		initContext.RegisterSourceOutput(
 			validatableObjects
@@ -135,6 +163,16 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 	}
 
 	/// <summary>
+	/// Returns the JSON name argument of the CombineNested call; empty when the name is resolved at runtime
+	/// </summary>
+	private static string JsonNameArgument(PropertyProperties property, ValidlyConfiguration config)
+	{
+		string? jsonName = JsonNameResolver.Resolve(property, config.JsonNamingPolicy ?? ValidlyNamingPolicy.None);
+
+		return jsonName is null ? string.Empty : $", {SymbolDisplay.FormatLiteral(jsonName, true)}";
+	}
+
+	/// <summary>
 	/// Create list of validation attributes. Include auto validators if enabled.
 	/// </summary>
 	/// <param name="properties"></param>
@@ -223,7 +261,8 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		var invocationBuilder = new PropertiesValidationInvocationBuilder(
 			rulesClassName,
 			dependencies,
-			obj.ExitEarly ?? config.ExitEarly
+			obj.ExitEarly ?? config.ExitEarly,
+			config.JsonNamingPolicy ?? ValidlyNamingPolicy.None
 		);
 
 		// Generate stuff for each property
@@ -258,7 +297,7 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 		bool isAsync =
 			isInherentlyAsync
 			// TODO: Can we handle this differently? How should we check if that type is async validator? For now, we force async behavior if there is any property of Validatable type
-			|| obj.Properties.Any(prop => prop.PropertyIsOfValidatableType);
+			|| obj.Properties.Any(prop => prop.PropertyIsOfValidatableType || ValidatesCollectionItems(prop, config));
 
 		return new LevelAnalysis
 		{
@@ -272,6 +311,16 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 			IsAsync = isAsync,
 			IsInherentlyAsync = isInherentlyAsync,
 		};
+	}
+
+	/// <summary>
+	/// Items of the collection property are validated
+	/// </summary>
+	private static bool ValidatesCollectionItems(PropertyProperties property, ValidlyConfiguration config)
+	{
+		return config.ValidateCollectionItems
+			&& !property.SkipItemsValidation
+			&& property.CollectionItemsKind != CollectionItemsKind.None;
 	}
 
 	private static bool IsCalledAwaitableHook(MethodProperties? hook)
@@ -384,8 +433,87 @@ public class ValidatableSourceGenerator : IIncrementalGenerator
 				$$"""
 				if (nestedValidationResult{{nestedIndex}} is not null)
 				{
-					result.CombineNested(nestedValidationResult{{nestedIndex}}, "{{property.PropertyName}}");
+					result.CombineNested(nestedValidationResult{{nestedIndex}}, {{SymbolDisplay.FormatLiteral(
+						property.PropertyName,
+						true
+					)}}{{JsonNameArgument(property, properties.Config)}});
 					nestedValidationResult{{nestedIndex}}.Dispose();
+				}
+				"""
+			);
+		}
+
+		int collectionIndex = 0;
+
+		foreach (var property in properties.Object.Properties)
+		{
+			if (!ValidatesCollectionItems(property, properties.Config))
+			{
+				continue;
+			}
+
+			int n = collectionIndex++;
+			string? jsonName = JsonNameResolver.Resolve(property, properties.Config.JsonNamingPolicy ?? ValidlyNamingPolicy.None);
+			string jsonNameLiteral = jsonName is null ? "null" : SymbolDisplay.FormatLiteral(jsonName, true);
+
+			string itemValidation = $$"""
+				if (collectionItemValue{{n}} is not {} collectionItem{{n}})
+				{
+					continue;
+				}
+
+				context.SetObject(collectionItem{{n}});
+				(({{Consts.InternalValidationInvokerGlobalRef}})collectionItem{{n}}).SetValidationContext(context);
+				var collectionItemResult{{n}} = await (({{Consts.IValidatableGlobalRef}})collectionItem{{n}}).ValidateAsync(serviceProvider!, ct);
+
+				// Only invalid items are reported
+				if (collectionItemResult{{n}}.IsSuccess)
+				{
+					collectionItemResult{{n}}.Dispose();
+					continue;
+				}
+
+				(collectionItemResults{{n}} ??= new()).Add((collectionItemIndex{{n}}, collectionItemResult{{n}}));
+				nestedPropertiesCount += (({{Consts.InternalValidationResultGlobalRef}})collectionItemResult{{n}}).GetPropertiesCount() + (collectionItemResult{{n}}.Global.Count == 0 ? 0 : 1);
+				""";
+
+			string loop = property.CollectionItemsKind == CollectionItemsKind.Enumerable
+				? $$"""
+					int collectionItemIndex{{n}} = -1;
+					foreach (var collectionItemValue{{n}} in collection{{n}})
+					{
+						collectionItemIndex{{n}}++;
+					{{itemValidation.Indent()}}
+					}
+					"""
+				: $$"""
+					for (int collectionItemIndex{{n}} = 0; collectionItemIndex{{n}} < collection{{n}}.{{(property.CollectionItemsKind is CollectionItemsKind.Array or CollectionItemsKind.ImmutableArray ? "Length" : "Count")}}; collectionItemIndex{{n}}++)
+					{
+						var collectionItemValue{{n}} = collection{{n}}[collectionItemIndex{{n}}];
+					{{itemValidation.Indent()}}
+					}
+					""";
+
+			nestedValidations.Add(
+				$$"""
+				// Validate items of "{{property.PropertyName}}"
+				global::System.Collections.Generic.List<(int Index, {{Consts.ValidationResultGlobalRef}} Result)>? collectionItemResults{{n}} = null;
+				if (this.{{property.PropertyName}} is {} collection{{n}}{{(property.CollectionItemsKind == CollectionItemsKind.ImmutableArray ? $" && !collection{n}.IsDefault" : string.Empty)}})
+				{
+				{{loop.Indent()}}
+				}
+				"""
+			);
+
+			nestedValidationsDispose.Add(
+				$$"""
+				if (collectionItemResults{{n}} is not null)
+				{
+					foreach (var collectionItemResult in collectionItemResults{{n}})
+					{
+						result.CombineCollectionItem(collectionItemResult.Result, {{SymbolDisplay.FormatLiteral(property.PropertyName, true)}}, {{jsonNameLiteral}}, collectionItemResult.Index);
+						collectionItemResult.Result.Dispose();
+					}
 				}
 				"""
 			);
